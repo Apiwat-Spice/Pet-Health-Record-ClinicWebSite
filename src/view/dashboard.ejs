@@ -62,10 +62,10 @@
                                 User Role
                             </label>
                             <div>
-                                <% if (user.role === 'pet_owner') { %>
+                                <% if (user.role === 'clinic') { %>
                                     <span class="badge bg-primary fs-6">
-                                        <i class="fa-solid fa-paw"></i>
-                                        PET OWNER
+                                        <i class="fa-solid fa-hospital"></i>
+                                        CLINIC
                                     </span>
                                 <% } else if (user.role === 'vet') { %>
                                     <span class="badge bg-success fs-6">
@@ -89,10 +89,10 @@
                          Role Description
                     ========================= -->
                     <hr>
-                    <% if (user.role === 'pet_owner') { %>
+                    <% if (user.role === 'clinic') { %>
                         <div class="alert alert-primary mb-0">
-                            <i class="fa-solid fa-paw"></i>
-                            <strong>Pet Owner</strong>
+                            <i class="fa-solid fa-hospital"></i>
+                            <strong>CLINIC</strong>
                             <br>
                             ผู้ใช้งานสำหรับจัดการข้อมูลสัตว์เลี้ยง
                             ประวัติสุขภาพ และการนัดหมาย

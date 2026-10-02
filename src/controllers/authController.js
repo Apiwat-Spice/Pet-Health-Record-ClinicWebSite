@@ -28,7 +28,7 @@ exports.login = async (req, res) => {
             .single();
         if (error || !user) {
             return res.render('login', {
-                error: 'Email หรือ Password ไม่ถูกต้อง'
+                error: 'Email ไม่ถูกต้อง'
             });
         }
         if (user.status !== 'active') {
@@ -41,10 +41,15 @@ exports.login = async (req, res) => {
                 error: 'บัญชียังไม่ได้รับการยืนยัน'
             });
         }
+        if (user.role !== 'vet' && user.role !== 'clinic' && user.role !== 'clinic_staff') {
+            return res.render('login', {
+                error: 'ระบบนี้เป็นระบบจัดการภายในสถานพยาบาลสัตว์เท่านั้น (ผู้ใช้งานทั่วไปใช้งานแอปพลิเคชัน Mobile)'
+            });
+        }
         const passwordMatch = await bcrypt.compare(password, user.password_hash);
         if (!passwordMatch) {
             return res.render('login', {
-                error: 'Email หรือ Password ไม่ถูกต้อง'
+                error: 'Password ไม่ถูกต้อง'
             });
         }
         req.session.user = {

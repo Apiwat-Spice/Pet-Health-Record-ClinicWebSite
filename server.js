@@ -2,17 +2,19 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
+
 const authRoutes = require('./src/routes/authRoutes');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const petRoutes = require('./src/routes/petRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-// ===============================
+
 // Middleware
-// ===============================
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// ===============================
+
 // Session
-// ===============================
 app.use(
     session({
         secret: process.env.JWT_SECRET,
@@ -24,35 +26,24 @@ app.use(
         }
     })
 );
-// ===============================
+
+// ส่ง user ไปทุก view อัตโนมัติ (sidebar ใช้ user.role)
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    res.locals.activePage = '';
+    next();
+});
+
 // EJS
-// ===============================
 app.set('view engine', 'ejs');
-app.set(
-    'views',
-    path.join(__dirname, 'src/view')
-);
-// ===============================
+app.set('views', path.join(__dirname, 'src/view'));
+
 // Routes
-// ===============================
 app.use('/', authRoutes);
-// ===============================
-// Home
-// ===============================
-app.get('/', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    res.redirect('/dashboard');
-});
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    res.render('dashboard', {
-        user: req.session.user
-    });
-});
+app.use('/', dashboardRoutes);
+app.use('/', petRoutes);
+
+// Logout (ถ้าอยากเก็บให้เป็นระเบียบ ย้ายไป authRoutes ได้)
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -61,6 +52,7 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
