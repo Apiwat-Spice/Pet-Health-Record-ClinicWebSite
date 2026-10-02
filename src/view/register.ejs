@@ -2,141 +2,118 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-    <title>Register - WebClinic</title>
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Register - WebClinic</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body class="bg-light">
-    <div class="container">
-        <div class="row justify-content-center align-items-center min-vh-100">
-            <div class="col-md-6 col-lg-5">
-                <div class="card shadow border-0">
-                    <div class="card-body p-4">
-                        <div class="text-center mb-4">
-                            <i class="fa-solid fa-user-plus fa-3x text-primary mb-3"></i>
-                            <h2 class="fw-bold">
-                                สร้างบัญชี
-                            </h2>
-                            <p class="text-muted">
-                                สมัครสมาชิก WebClinic
-                            </p>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <i class="fa-solid fa-hospital fa-3x text-primary mb-3"></i>
+                        <h2 class="fw-bold">Clinic Register</h2>
+                        <p class="text-muted mb-0">ลงทะเบียนสำหรับสัตวแพทย์และคลินิก</p>
+                    </div>
+                    <% if (error) { %>
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+                    <div class="alert alert-info">
+                        <i class="fa-solid fa-circle-info"></i>
+                        หลังสมัครสมาชิก บัญชีจะเป็น <strong>Vet</strong> และรอ Admin ตรวจสอบข้อมูลและเอกสารของ Clinic
+                    </div>
+                    <form action="/register" method="POST">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fa-solid fa-user"></i>
+                            ข้อมูลพื้นฐาน
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="example@email.com" required>
+                                <small class="text-muted">จะใช้ Email OTP ในขั้นตอนถัดไป</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" minlength="6" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Confirm Password</label>
+                                <input type="password" name="confirmPassword" class="form-control" minlength="6" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ชื่อ</label>
+                                <input type="text" name="firstname" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">นามสกุล</label>
+                                <input type="text" name="lastname" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">วันเกิด</label>
+                                <input type="date" name="birthdate" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">เลขบัตรประชาชน</label>
+                                <input type="text" name="nationalId" class="form-control" maxlength="13" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">เบอร์โทรศัพท์</label>
+                                <input type="tel" name="phone" class="form-control" placeholder="08xxxxxxxx" required>
+                            </div>
                         </div>
-                        <% if (error) { %>
-                            <div class="alert alert-danger">
-                                <i class="fa-solid fa-circle-exclamation"></i>
-                                <%= error %>
-                            </div>
-                        <% } %>
-                        <form action="/register" method="POST">
-                            <!-- Name -->
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    ชื่อ
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fa-solid fa-user"></i>
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        class="form-control"
-                                        placeholder="กรอกชื่อ"
-                                        required
-                                    >
-                                </div>
-                            </div>
-                            <!-- Email -->
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    Email
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fa-solid fa-envelope"></i>
-                                    </span>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        class="form-control"
-                                        placeholder="example@email.com"
-                                        required
-                                    >
-                                </div>
-                            </div>
-                            <!-- Password -->
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    Password
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fa-solid fa-lock"></i>
-                                    </span>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        class="form-control"
-                                        placeholder="อย่างน้อย 6 ตัวอักษร"
-                                        minlength="6"
-                                        required
-                                    >
-                                </div>
-                            </div>
-                            <!-- Confirm Password -->
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    Confirm Password
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fa-solid fa-lock"></i>
-                                    </span>
-                                    <input
-                                        type="password"
-                                        name="confirmPassword"
-                                        class="form-control"
-                                        placeholder="ยืนยัน Password"
-                                        minlength="6"
-                                        required
-                                    >
-                                </div>
-                            </div>
-                            <!-- Register -->
-                            <button
-                                type="submit"
-                                class="btn btn-primary w-100"
-                            >
-                                <i class="fa-solid fa-user-plus"></i>
-                                สมัครสมาชิก
-                            </button>
-                        </form>
                         <hr class="my-4">
-                        <div class="text-center">
-                            <span class="text-muted">
-                                มีบัญชีอยู่แล้ว?
-                            </span>
-                            <a
-                                href="/login"
-                                class="text-decoration-none fw-bold"
-                            >
-                                เข้าสู่ระบบ
-                            </a>
+                        <h5 class="fw-bold mb-3">
+                            <i class="fa-solid fa-file"></i>
+                            เอกสารสำหรับตรวจสอบ
+                        </h5>
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-clock"></i>
+                            ส่วนนี้เป็น Mockup สำหรับเตรียมระบบตรวจสอบโดย Admin
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">สส.3 PDF</label>
+                            <input type="file" name="ss3" class="form-control" accept=".pdf">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">สส.4 PDF</label>
+                            <input type="file" name="ss4" class="form-control" accept=".pdf">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ใบประกอบวิชาชีพ PDF</label>
+                            <input type="file" name="vetLicense" class="form-control" accept=".pdf">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">บัตรประจำตัวแพทย์ PDF</label>
+                            <input type="file" name="doctorCard" class="form-control" accept=".pdf">
+                        </div>
+                        <div class="alert alert-secondary">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            Email จะต้องผ่านการยืนยัน OTP ก่อน ส่วนเอกสารและ Clinic จะต้องรอ Admin ตรวจสอบ
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fa-solid fa-user-plus"></i>
+                            สมัคร Clinic
+                        </button>
+                    </form>
+                    <div class="text-center mt-4">
+                        <span class="text-muted">มีบัญชีแล้ว?</span>
+                        <a href="/login" class="text-decoration-none fw-bold">เข้าสู่ระบบ</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </body>
 </html>

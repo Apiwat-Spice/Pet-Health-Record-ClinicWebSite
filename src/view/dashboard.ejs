@@ -19,119 +19,12 @@
     >
 </head>
 <body class="bg-light">
-<!-- =========================
-     Navbar
-========================= -->
-<nav class="navbar navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a
-            class="navbar-brand fw-bold"
-            href="/dashboard"
-        >
-            <i class="fa-solid fa-house-medical"></i>
-            WebClinic
-        </a>
-        <div class="text-white">
-            <i class="fa-solid fa-user"></i>
-            <%= user.email %>
-            <a
-                href="/logout"
-                class="btn btn-light btn-sm ms-3"
-            >
-                <i class="fa-solid fa-right-from-bracket"></i>
-                Logout
-            </a>
-        </div>
-    </div>
-</nav>
+     <!-- Navbar -->
+<%- include('partial/navbar') %>
 <div class="container-fluid">
     <div class="row">
-        <!-- =========================
-             Sidebar
-        ========================= -->
-        <aside class="col-md-3 col-lg-2 bg-white min-vh-100 border-end p-3">
-            <h6 class="text-muted mb-3">
-                MENU
-            </h6>
-            <div class="list-group">
-                <a
-                    href="/dashboard"
-                    class="list-group-item list-group-item-action active"
-                >
-                    <i class="fa-solid fa-gauge"></i>
-                    Dashboard
-                </a>
-                <% if (user.role === 'pet_owner') { %>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-paw"></i>
-                        My Pets
-                    </a>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-calendar"></i>
-                        Appointment
-                    </a>
-                <% } %>
-                <% if (user.role === 'vet') { %>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-paw"></i>
-                        Pets
-                    </a>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-calendar-check"></i>
-                        Appointment
-                    </a>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-file-medical"></i>
-                        Treatment
-                    </a>
-                <% } %>
-                <% if (user.role === 'clinic_staff') { %>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-calendar-check"></i>
-                        Appointment
-                    </a>
-                    <a
-                        href="#"
-                        class="list-group-item list-group-item-action"
-                    >
-                        <i class="fa-solid fa-receipt"></i>
-                        Transaction
-                    </a>
-                <% } %>
-                <a
-                    href="#"
-                    class="list-group-item list-group-item-action"
-                >
-                    <i class="fa-solid fa-gear"></i>
-                    Settings
-                </a>
-                <a
-                    href="/logout"
-                    class="list-group-item list-group-item-action text-danger"
-                >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Logout
-                </a>
-            </div>
-        </aside>
+             <!-- Sidebar -->
+        <%- include('partial/menu') %>
         <!-- =========================
              Main Content
         ========================= -->
