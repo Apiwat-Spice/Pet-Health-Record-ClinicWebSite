@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= locals.owner ? 'แก้ไข' : 'เพิ่ม' %>เจ้าของสัตว์เลี้ยง - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body class="bg-light">
+  <%
+        const isEdit = !!locals.owner;
+        const o = locals.owner || locals.old || {};
+        const errors = locals.errors || {};
+        const action = isEdit ? `/pet-owners/${o.pet_owner_id}/edit` : '/pet-owners/create';
+    %>
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/pet-owners">Pet Owners</a></li>
+            <li class="breadcrumb-item active"><%= isEdit ? 'แก้ไข' : 'เพิ่มใหม่' %></li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-4">
+          <i class="fa-solid fa-user-pen text-primary"></i>
+          <%= isEdit ? 'แก้ไขข้อมูลเจ้าของ' : 'เพิ่มเจ้าของสัตว์เลี้ยง' %>
+        </h2>
+        <% if (locals.error) { %>
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i> <%= error %></div>
+        <% } %>
+        <form method="POST" action="<%= action %>" enctype="multipart/form-data" class="card shadow-sm border-0" novalidate>
+          <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">ข้อมูลส่วนตัว</h5>
+            <div class="row g-4">
+              <div class="col-md-3 text-center">
+                <img id="preview" src="<%= o.profile_image_url || 'https://placehold.co/160x160?text=Profile' %>" class="rounded-circle border mb-3" width="160" height="160" style="object-fit:cover;" alt="รูปโปรไฟล์">
+                <input type="file" name="profile_image" id="profile_image" class="form-control form-control-sm" accept="image/png,image/jpeg,image/webp">
+                <div class="form-text">JPG, PNG, WebP ไม่เกิน 5 MB</div>
+              </div>
+              <div class="col-md-9">
+                <div class="row g-3">
+                  <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" value="<%= old?.email || '' %>" required>
+                    <% if (errors?.email) { %>
+                    <div class="text-danger"><%= errors.email %></div>
+                    <% } %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="username">Username <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">@</span>
+                      <input type="text" id="username" name="username" maxlength="50" required class="form-control <%= errors.username ? 'is-invalid' : '' %>" value="<%= o.username || '' %>">
+                      <div class="invalid-feedback"><%= errors.username || 'กรุณากรอก Username' %></div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="gender">เพศ</label>
+                    <select id="gender" name="gender" class="form-select <%= errors.gender ? 'is-invalid' : '' %>">
+                      <option value="">ไม่ระบุ</option>
+                      <% [['male','ชาย'],['female','หญิง'],['other','อื่น ๆ'],['prefer_not_to_say','ไม่ต้องการระบุ']].forEach(([v,t]) => { %>
+                      <option value="<%= v %>" <%= o.gender === v ? 'selected' : '' %>><%= t %></option>
+                      <% }) %>
+                    </select>
+                    <div class="invalid-feedback"><%= errors.gender || 'กรุณาเลือกเพศให้ถูกต้อง' %></div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="first_name">ชื่อ <span class="text-danger">*</span></label>
+                    <input type="text" id="first_name" name="first_name" maxlength="100" required class="form-control <%= errors.first_name ? 'is-invalid' : '' %>" value="<%= o.first_name || '' %>">
+                    <div class="invalid-feedback"><%= errors.first_name || 'กรุณากรอกชื่อ' %></div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="last_name">นามสกุล <span class="text-danger">*</span></label>
+                    <input type="text" id="last_name" name="last_name" maxlength="100" required class="form-control <%= errors.last_name ? 'is-invalid' : '' %>" value="<%= o.last_name || '' %>">
+                    <div class="invalid-feedback"><%= errors.last_name || 'กรุณากรอกนามสกุล' %></div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="id_card">เลขบัตรประชาชน</label>
+                    <input type="text" id="id_card" name="id_card" maxlength="20" class="form-control <%= errors.id_card ? 'is-invalid' : '' %>" value="<%= o.id_card || '' %>" placeholder="กรอกเลขบัตรประชาชน">
+                    <div class="invalid-feedback"><%= errors.id_card || 'เลขบัตรประชาชนไม่ถูกต้อง' %></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-location-dot text-primary me-1"></i> ที่อยู่</h5>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="address_line">บ้านเลขที่ / ถนน</label>
+                <textarea id="address_line" name="address_line" rows="2" class="form-control" placeholder="บ้านเลขที่ หมู่ ถนน อาคาร"><%= o.address_line || '' %></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="subdistrict">ตำบล / แขวง</label>
+                <input type="text" id="subdistrict" name="subdistrict" maxlength="100" class="form-control" value="<%= o.subdistrict || '' %>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="district">อำเภอ / เขต</label>
+                <input type="text" id="district" name="district" maxlength="100" class="form-control" value="<%= o.district || '' %>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="province">จังหวัด</label>
+                <input type="text" id="province" name="province" maxlength="100" class="form-control" value="<%= o.province || '' %>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="postal_code">รหัสไปรษณีย์</label>
+                <input type="text" id="postal_code" name="postal_code" maxlength="10" class="form-control" value="<%= o.postal_code || '' %>" placeholder="เช่น 73140">
+              </div>
+            </div>
+            <% if (locals.isAdmin) { %>
+            <hr class="my-4">
+            <h5 class="fw-bold mb-3">สถานะการยืนยัน</h5>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="verified" name="verified" value="true" <%= o.verified ? 'checked' : '' %>>
+              <label class="form-check-label" for="verified">ยืนยันตัวตนแล้ว</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="verified_id_card" name="verified_id_card" value="true" <%= o.verified_id_card ? 'checked' : '' %>>
+              <label class="form-check-label" for="verified_id_card">ยืนยันบัตรประชาชนแล้ว</label>
+            </div>
+            <% } %>
+          </div>
+<div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 p-4">
+  <a href="/pet-owners" class="btn btn-light" id="cancelButton">ยกเลิก</a>
+  <button type="submit" class="btn btn-primary" id="submitButton">
+    <i class="fa-solid fa-floppy-disk me-1"></i>
+    <span id="submitText"><%= isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มเจ้าของ' %></span>
+  </button>
+</div>
+
+        </form>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const profileInput = document.getElementById('profile_image');
+
+  profileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ไฟล์ใหญ่เกิน 5 MB');
+      e.target.value = '';
+      return;
+    }
+
+    document.getElementById('preview').src = URL.createObjectURL(file);
+  });
+
+  document.querySelector('form').addEventListener('submit', e => {
+    const form = e.target;
+
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      form.classList.add('was-validated');
+      form.querySelector(':invalid')?.focus();
+    }
+  });
+</script>
+
+<script>
+  const form = document.querySelector('form');
+  const submitButton = document.getElementById('submitButton');
+  const submitText = document.getElementById('submitText');
+  const cancelButton = document.getElementById('cancelButton');
+  let isSubmitting = false;
+
+  form.addEventListener('submit', e => {
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      form.classList.add('was-validated');
+      form.querySelector(':invalid')?.focus();
+      return;
+    }
+
+    if (isSubmitting) {
+      e.preventDefault();
+      return;
+    }
+
+    isSubmitting = true;
+    submitButton.disabled = true;
+    cancelButton.classList.add('disabled');
+    cancelButton.setAttribute('aria-disabled', 'true');
+    cancelButton.addEventListener('click', e => e.preventDefault());
+
+    submitText.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-1" role="status"></span>กำลังบันทึก...';
+  });
+</script>
+
+
+</body>
+
+</html>

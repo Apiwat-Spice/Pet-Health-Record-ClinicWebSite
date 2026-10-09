@@ -33,7 +33,8 @@ app.use((req, res, next) => {
     res.locals.activePage = '';
     next();
 });
-
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 // EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/view'));
