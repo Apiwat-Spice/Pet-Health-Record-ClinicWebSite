@@ -183,3 +183,47 @@ exports.createPetOwner = async (req, res) => {
     });
   }
 };
+exports.deletePetOwner = async (req, res) => {
+  const petOwnerId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(petOwnerId) || petOwnerId <= 0) {
+    return res.redirect('/pet-owners?error=invalid_id');
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('delete_pet_owner', {
+      p_pet_owner_id: petOwnerId
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const result = data?.[0];
+
+    if (!result?.deleted) {
+      return res.redirect('/pet-owners?error=not_found');
+    }
+
+    if (result.profile_image_public_id) {
+      try {
+        const imageResult = await cloudinary.uploader.destroy(
+          result.profile_image_public_id,
+          { resource_type: 'image' }
+        );
+
+        if (imageResult.result !== 'ok' &&
+            imageResult.result !== 'not found') {
+          console.error('Cloudinary delete result:', imageResult);
+        }
+      } catch (imageError) {
+        console.error('Cloudinary delete error:', imageError);
+      }
+    }
+
+    return res.redirect('/pet-owners?success=deleted');
+  } catch (error) {
+    console.error('Delete PetOwner error:', error);
+    return res.redirect('/pet-owners?error=delete_failed');
+  }
+};
