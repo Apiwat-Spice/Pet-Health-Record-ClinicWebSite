@@ -6,6 +6,7 @@ require('dotenv').config();
 const authRoutes = require('./src/routes/authRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const petRoutes = require('./src/routes/petRoutes');
+const appointmentRoutes = require('./src/routes/appointmentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,7 +44,7 @@ app.set('views', path.join(__dirname, 'src/view'));
 app.use('/', authRoutes);
 app.use('/', dashboardRoutes);
 app.use('/', petRoutes);
-
+app.use('/appointments', appointmentRoutes);
 // Logout (ถ้าอยากเก็บให้เป็นระเบียบ ย้ายไป authRoutes ได้)
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {

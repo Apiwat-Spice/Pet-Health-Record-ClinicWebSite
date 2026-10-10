@@ -1,89 +1,98 @@
+
 <aside class="col-md-3 col-lg-2 bg-white min-vh-100 border-end p-3">
-    <h6 class="text-muted mb-3">MENU</h6>
+  <h6 class="text-muted mb-3">MENU</h6>
+  <div class="list-group">
+    <a href="/dashboard" class="list-group-item list-group-item-action <%= activePage === 'dashboard' ? 'active' : '' %>">
+      <i class="fa-regular fa-compass"></i> Dashboard
+    </a>
 
-    <div class="list-group">
-
-        <a href="/dashboard"
-           class="list-group-item list-group-item-action <%= activePage === 'dashboard' ? 'active' : '' %>">
-            <i class="fa-regular fa-compass"></i> Dashboard
+    <% if (user.role === 'clinic') { %>
+      <% const petsOpen = ['Pets', 'Pet_Owners'].includes(activePage); %>
+      <a href="#petsMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= petsOpen ? 'true' : 'false' %>" aria-controls="petsMenu">
+        <span><i class="fa-solid fa-paw"></i> Pets</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
+      <div class="collapse <%= petsOpen ? 'show' : '' %>" id="petsMenu">
+        <a href="/pets" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pets' ? 'active' : '' %>">
+          <i class="fa-solid fa-dog"></i> Pets
         </a>
-
-        <% if (user.role === 'clinic') { %>
-
-            <!-- Pets (Dropdown) -->
-            <% const petsOpen = ['pets', 'pet-owners'].includes(activePage); %>
-
-            <a href="#petsMenu"
-               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center <%= petsOpen ? 'active' : '' %>"
-               data-bs-toggle="collapse"
-               role="button"
-               aria-expanded="<%= petsOpen ? 'true' : 'false' %>"
-               aria-controls="petsMenu">
-                <span><i class="fa-solid fa-paw"></i> Pets</span>
-                <i class="fa-solid fa-chevron-down small"></i>
-            </a>
-
-            <div class="collapse show" id="petsMenu">
-                <a href="/pets"
-                   class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pets' ? 'active' : '' %>">
-                    <i class="fa-solid fa-dog"></i> Pets
-                </a>
-                <a href="/pet-owners"
-                   class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pet_Owners' ? 'active' : '' %>">
-                    <i class="fa-solid fa-user"></i> Pet Owners
-                </a>
-            </div>
-
-            <a href="/appointments"
-               class="list-group-item list-group-item-action <%= activePage === 'appointments' ? 'active' : '' %>">
-                <i class="fa-solid fa-calendar-check"></i> Appointment
-            </a>
-            <a href="/treatments"
-               class="list-group-item list-group-item-action <%= activePage === 'treatments' ? 'active' : '' %>">
-                <i class="fa-solid fa-file-medical"></i> Treatment
-            </a>
-
-        <% } %>
-
-        <% if (user.role === 'clinic_staff') { %>
-            <a href="/appointments"
-               class="list-group-item list-group-item-action <%= activePage === 'appointments' ? 'active' : '' %>">
-                <i class="fa-solid fa-calendar-check"></i> Appointment
-            </a>
-            <a href="/transactions"
-               class="list-group-item list-group-item-action <%= activePage === 'transactions' ? 'active' : '' %>">
-                <i class="fa-solid fa-receipt"></i> Transaction
-            </a>
-        <% } %>
-
-        <a href="/settings"
-           class="list-group-item list-group-item-action <%= activePage === 'settings' ? 'active' : '' %>">
-            <i class="fa-solid fa-gear"></i> Settings
+        <a href="/pet-owners" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pet_Owners' ? 'active' : '' %>">
+          <i class="fa-solid fa-user"></i> Pet Owners
         </a>
+      </div>
+    <% } %>
 
-        <a href="/logout" class="list-group-item list-group-item-action text-danger">
-            <i class="fa-solid fa-right-from-bracket"></i> Logout
+    <% if (user.role === 'clinic' || user.role === 'clinic_staff') { %>
+      <% const appointmentOpen = ['appointments', 'visit-records', 'receipt'].includes(activePage); %>
+      <a href="#appointmentMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= appointmentOpen ? 'true' : 'false' %>" aria-controls="appointmentMenu">
+        <span><i class="fa-solid fa-calendar-check"></i> Appointment</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
+      <div class="collapse <%= appointmentOpen ? 'show' : '' %>" id="appointmentMenu">
+        <a href="/appointments" class="list-group-item list-group-item-action ps-5 <%= activePage === 'appointments' ? 'active' : '' %>">
+          <i class="fa-solid fa-calendar-check"></i> Appointment
         </a>
-    </div>
+        <a href="/visit-records" class="list-group-item list-group-item-action ps-5 <%= activePage === 'visit-records' ? 'active' : '' %>">
+          <i class="fa-solid fa-file-medical"></i> Visit Record
+        </a>
+        <a href="/receipt" class="list-group-item list-group-item-action ps-5 <%= activePage === 'receipt' ? 'active' : '' %>">
+          <i class="fa-solid fa-file-medical"></i> Receipt
+        </a>
+      </div>
+    <% } %>
+
+    <% if (user.role === 'clinic') { %>
+      <a href="/treatments" class="list-group-item list-group-item-action <%= activePage === 'treatments' ? 'active' : '' %>">
+        <i class="fa-solid fa-file-medical"></i> Treatment
+      </a>
+    <% } %>
+
+    <% if (user.role === 'clinic_staff') { %>
+      <a href="/transactions" class="list-group-item list-group-item-action <%= activePage === 'transactions' ? 'active' : '' %>">
+        <i class="fa-solid fa-receipt"></i> Transaction
+      </a>
+    <% } %>
+
+    <a href="/settings" class="list-group-item list-group-item-action <%= activePage === 'settings' ? 'active' : '' %>">
+      <i class="fa-solid fa-gear"></i> Settings
+    </a>
+    <a href="/logout" class="list-group-item list-group-item-action text-danger">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </div>
 </aside>
+
 <script>
-(() => {
-    const el = document.getElementById('petsMenu');
-    const toggler = document.querySelector('[href="#petsMenu"]');
+  (() => {
+    const menus = [
+      { id: 'petsMenu', key: 'menu-closed:petsMenu' },
+      { id: 'appointmentMenu', key: 'menu-closed:appointmentMenu' }
+    ];
 
-    // role อื่นไม่มีเมนูนี้ ให้จบการทำงาน
-    if (!el || !toggler) return;
+    menus.forEach(({ id, key }) => {
+      const el = document.getElementById(id);
+      const toggler = document.querySelector(`[href="#${id}"]`);
 
-    const key = 'menu-closed:petsMenu';
+      if (!el || !toggler) return;
 
-    // ถ้าผู้ใช้เคยกดปิดไว้ ให้ปิดตั้งแต่โหลด
-    if (localStorage.getItem(key) === '1') {
+      const active = el.querySelector('.list-group-item.active');
+
+      if (active) {
+        el.classList.add('show');
+        toggler.setAttribute('aria-expanded', 'true');
+        localStorage.removeItem(key);
+      } else if (localStorage.getItem(key) === '1') {
         el.classList.remove('show');
         toggler.setAttribute('aria-expanded', 'false');
-    }
+      }
 
-    // บันทึกเมื่อผู้ใช้กดเปิด/ปิด
-    el.addEventListener('hidden.bs.collapse', () => localStorage.setItem(key, '1'));
-    el.addEventListener('shown.bs.collapse', () => localStorage.removeItem(key));
-})();
+      el.addEventListener('hidden.bs.collapse', () => {
+        localStorage.setItem(key, '1');
+      });
+
+      el.addEventListener('shown.bs.collapse', () => {
+        localStorage.removeItem(key);
+      });
+    });
+  })();
 </script>

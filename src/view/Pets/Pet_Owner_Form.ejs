@@ -45,13 +45,13 @@
               </div>
               <div class="col-md-9">
                 <div class="row g-3">
+
                   <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" class="form-control" value="<%= old?.email || '' %>" required>
-                    <% if (errors?.email) { %>
-                    <div class="text-danger"><%= errors.email %></div>
-                    <% } %>
+                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control <%= errors.email ? 'is-invalid' : '' %>" value="<%= old?.email ?? o.email ?? '' %>" required>
+                    <div class="invalid-feedback"><%= errors.email || 'กรุณากรอกอีเมลให้ถูกต้อง' %></div>
                   </div>
+
                   <div class="col-md-6">
                     <label class="form-label" for="username">Username <span class="text-danger">*</span></label>
                     <div class="input-group">
@@ -125,76 +125,76 @@
             </div>
             <% } %>
           </div>
-<div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 p-4">
-  <a href="/pet-owners" class="btn btn-light" id="cancelButton">ยกเลิก</a>
-  <button type="submit" class="btn btn-primary" id="submitButton">
-    <i class="fa-solid fa-floppy-disk me-1"></i>
-    <span id="submitText"><%= isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มเจ้าของ' %></span>
-  </button>
-</div>
+          <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 p-4">
+            <a href="/pet-owners" class="btn btn-light" id="cancelButton">ยกเลิก</a>
+            <button type="submit" class="btn btn-primary" id="submitButton">
+              <i class="fa-solid fa-floppy-disk me-1"></i>
+              <span id="submitText"><%= isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มเจ้าของ' %></span>
+            </button>
+          </div>
 
         </form>
       </main>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  const profileInput = document.getElementById('profile_image');
+  <script>
+    const profileInput = document.getElementById('profile_image');
 
-  profileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    profileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ไฟล์ใหญ่เกิน 5 MB');
-      e.target.value = '';
-      return;
-    }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('ไฟล์ใหญ่เกิน 5 MB');
+        e.target.value = '';
+        return;
+      }
 
-    document.getElementById('preview').src = URL.createObjectURL(file);
-  });
+      document.getElementById('preview').src = URL.createObjectURL(file);
+    });
 
-  document.querySelector('form').addEventListener('submit', e => {
-    const form = e.target;
+    document.querySelector('form').addEventListener('submit', e => {
+      const form = e.target;
 
-    if (!form.checkValidity()) {
-      e.preventDefault();
-      form.classList.add('was-validated');
-      form.querySelector(':invalid')?.focus();
-    }
-  });
-</script>
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        form.classList.add('was-validated');
+        form.querySelector(':invalid')?.focus();
+      }
+    });
+  </script>
 
-<script>
-  const form = document.querySelector('form');
-  const submitButton = document.getElementById('submitButton');
-  const submitText = document.getElementById('submitText');
-  const cancelButton = document.getElementById('cancelButton');
-  let isSubmitting = false;
+  <script>
+    const form = document.querySelector('form');
+    const submitButton = document.getElementById('submitButton');
+    const submitText = document.getElementById('submitText');
+    const cancelButton = document.getElementById('cancelButton');
+    let isSubmitting = false;
 
-  form.addEventListener('submit', e => {
-    if (!form.checkValidity()) {
-      e.preventDefault();
-      form.classList.add('was-validated');
-      form.querySelector(':invalid')?.focus();
-      return;
-    }
+    form.addEventListener('submit', e => {
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        form.classList.add('was-validated');
+        form.querySelector(':invalid')?.focus();
+        return;
+      }
 
-    if (isSubmitting) {
-      e.preventDefault();
-      return;
-    }
+      if (isSubmitting) {
+        e.preventDefault();
+        return;
+      }
 
-    isSubmitting = true;
-    submitButton.disabled = true;
-    cancelButton.classList.add('disabled');
-    cancelButton.setAttribute('aria-disabled', 'true');
-    cancelButton.addEventListener('click', e => e.preventDefault());
+      isSubmitting = true;
+      submitButton.disabled = true;
+      cancelButton.classList.add('disabled');
+      cancelButton.setAttribute('aria-disabled', 'true');
+      cancelButton.addEventListener('click', e => e.preventDefault());
 
-    submitText.innerHTML =
-      '<span class="spinner-border spinner-border-sm me-1" role="status"></span>กำลังบันทึก...';
-  });
-</script>
+      submitText.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1" role="status"></span>กำลังบันทึก...';
+    });
+  </script>
 
 
 </body>

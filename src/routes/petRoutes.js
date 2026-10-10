@@ -36,5 +36,10 @@ router.post(
   petController.createPetOwner
 );
 router.post('/pet-owners/:id/delete', petController.deletePetOwner);
-
+router.get('/pet-owners/:id/edit', petController.showEditPetOwner);
+router.post(
+  '/pet-owners/:id/edit',
+  upload.single('profile_image'),
+  petController.updatePetOwner
+);
 module.exports = router;
