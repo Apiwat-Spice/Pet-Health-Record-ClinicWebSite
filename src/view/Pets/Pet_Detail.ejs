@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายละเอียดสัตว์เลี้ยง - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <div>
+            <h2 class="fw-bold mb-1"><i class="fa-solid fa-paw text-primary me-2"></i><%= pet.pet_name %></h2>
+            <p class="text-muted mb-0">รายละเอียดข้อมูลสัตว์เลี้ยง #<%= pet.pet_id %></p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/pets" class="btn btn-light"><i class="fa-solid fa-arrow-left me-1"></i>กลับ</a>
+            <a href="/pets/<%= pet.pet_id %>/edit" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>แก้ไข</a>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+              <% if (pet.pet_image_url) { %>
+                <img src="<%= pet.pet_image_url %>" class="card-img-top" alt="<%= pet.pet_name %>" style="height:300px;object-fit:cover">
+              <% } else { %>
+                <div class="d-flex align-items-center justify-content-center bg-secondary-subtle text-secondary" style="height:300px">
+                  <i class="fa-solid fa-paw fa-5x"></i>
+                </div>
+              <% } %>
+              <div class="card-body">
+                <h4 class="fw-bold"><%= pet.pet_name %></h4>
+                <p class="text-muted mb-2"><%= pet.animal_type %><%= pet.species ? ' · ' + pet.species : '' %></p>
+                <span class="badge <%= pet.verified ? 'text-bg-success' : 'text-bg-warning' %>">
+                  <%= pet.verified ? 'ยืนยันข้อมูลแล้ว' : 'ยังไม่ยืนยันข้อมูล' %>
+                </span>
+                <% if (pet.sterilization) { %>
+                  <span class="badge text-bg-light border">ทำหมันแล้ว</span>
+                <% } %>
+              </div>
+            </div>
+            <div class="card border-0 shadow-sm mt-3">
+              <div class="card-body">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-user text-primary me-2"></i>ข้อมูลเจ้าของ</h5>
+                <% if (owner) { %>
+                  <p class="mb-2"><strong>ชื่อ:</strong> <%= [owner.first_name, owner.last_name].filter(Boolean).join(' ') || '-' %></p>
+                  <p class="mb-2"><strong>Username:</strong> <%= owner.username || '-' %></p>
+                  <p class="mb-2"><strong>อีเมล:</strong> <%= owner.email || '-' %></p>
+                  <p class="mb-0"><strong>รหัสเจ้าของ:</strong> <%= pet.pet_owner_id %></p>
+                <% } else { %>
+                  <p class="text-muted mb-0">ไม่พบข้อมูลเจ้าของ</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">ข้อมูลทั่วไป</h5>
+                <div class="row g-3">
+                  <div class="col-md-6"><div class="text-muted small">ชื่อสัตว์เลี้ยง</div><div><%= pet.pet_name %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">ชนิดสัตว์</div><div><%= pet.animal_type || '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">สายพันธุ์</div><div><%= pet.species || '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">เพศ</div><div><%= ({male:'ผู้',female:'เมีย',unknown:'ไม่ทราบ'})[pet.sex] || '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">วันเกิด</div><div><%= pet.birthdate ? String(pet.birthdate).slice(0,10) : '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">น้ำหนัก</div><div><%= pet.weight != null ? pet.weight + ' กก.' : '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">ทำหมัน</div><div><%= pet.sterilization ? 'ทำหมันแล้ว' : 'ยังไม่ได้ทำหมัน' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">สถานะยืนยัน</div><div><%= pet.verified ? 'ยืนยันแล้ว' : 'ยังไม่ยืนยัน' %></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">ข้อมูลระบุตัวตน</h5>
+                <div class="row g-3">
+                  <div class="col-md-6"><div class="text-muted small">รหัสสัตว์เลี้ยง</div><div><%= pet.pet_id %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">รหัสเจ้าของ</div><div><%= pet.pet_owner_id %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">เลขไมโครชิป</div><div><%= pet.microchip_number || '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">แท็กสัตว์เลี้ยง</div><div><%= pet.pet_tag || '-' %></div></div>
+                  <div class="col-12">
+                    <div class="text-muted small">QR Code</div>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="fa-solid fa-qrcode"></i></span>
+                      <input class="form-control" value="<%= pet.qr_code || '-' %>" readonly>
+                      <% if (pet.qr_code) { %>
+                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('<%= pet.qr_code %>')">คัดลอก</button>
+                      <% } %>
+                    </div>
+                  </div>
+                  <div class="col-12"><div class="text-muted small">รายละเอียดเพิ่มเติม</div><div class="text-break"><%= pet.detail || '-' %></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">ข้อมูลระบบ</h5>
+                <div class="row g-3">
+                  <div class="col-md-6"><div class="text-muted small">วันที่สร้าง</div><div><%= pet.created_at ? new Date(pet.created_at).toLocaleString('th-TH') : '-' %></div></div>
+                  <div class="col-md-6"><div class="text-muted small">วันที่แก้ไขล่าสุด</div><div><%= pet.updated_at ? new Date(pet.updated_at).toLocaleString('th-TH') : '-' %></div></div>
+                  <div class="col-12"><div class="text-muted small">Cloudinary Public ID</div><div class="text-break"><%= pet.pet_image_public_id || '-' %></div></div>
+                </div>
+              </div>
+            </div>
+            <form method="POST" action="/pets/<%= pet.pet_id %>/delete" class="mt-3" onsubmit="return confirm('ต้องการลบข้อมูลสัตว์เลี้ยงนี้ใช่หรือไม่?')">
+              <button class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>ลบสัตว์เลี้ยง</button>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
