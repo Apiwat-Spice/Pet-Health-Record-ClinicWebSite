@@ -1,3 +1,4 @@
+
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -23,19 +24,18 @@ app.use(
         saveUninitialized: false,
         cookie: {
             httpOnly: true,
-            maxAge: 1000 * 60 * 60 * 24 // 1 วัน
+            maxAge: 1000 * 60 * 60 * 24
         }
     })
 );
 
-// ส่ง user ไปทุก view อัตโนมัติ (sidebar ใช้ user.role)
+// Shared View Variables
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.activePage = '';
     next();
 });
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+
 // EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/view'));
@@ -45,7 +45,8 @@ app.use('/', authRoutes);
 app.use('/', dashboardRoutes);
 app.use('/', petRoutes);
 app.use('/appointments', appointmentRoutes);
-// Logout (ถ้าอยากเก็บให้เป็นระเบียบ ย้ายไป authRoutes ได้)
+
+// Logout
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -55,6 +56,7 @@ app.get('/logout', (req, res) => {
     });
 });
 
+// Start Server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
