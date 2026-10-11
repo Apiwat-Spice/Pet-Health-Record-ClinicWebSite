@@ -372,7 +372,9 @@
       </div>
     </div>
   </div>
-
+  <div id="appointmentData"
+     data-busy-appointments="<%= JSON.stringify(busyAppointments || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') %>">
+</div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -424,7 +426,6 @@
       createForm.addEventListener('submit', event => {
         updateMinimumDateTime();
         const appointmentDateTime = dateTimeInput.value;
-        const now = toLocalDateTimeValue(new Date());
 
         if (!petSelect.value || !vetSelect.value || !appointmentDateTime) {
           event.preventDefault();
@@ -432,15 +433,16 @@
           return;
         }
 
-const appointmentDate = new Date(appointmentDateTime);
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-appointmentDate.setHours(0, 0, 0, 0);
-if (appointmentDate < today) {
-  event.preventDefault();
-  showMessage('ไม่สามารถเลือกวันที่ผ่านมาแล้วได้', true);
-  return;
-}
+        const appointmentDate = new Date(appointmentDateTime);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        appointmentDate.setHours(0, 0, 0, 0);
+        
+        if (appointmentDate < today) {
+          event.preventDefault();
+          showMessage('ไม่สามารถเลือกวันที่ผ่านมาแล้วได้', true);
+          return;
+        }
 
         submitButton.disabled = true;
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
@@ -520,9 +522,11 @@ function filterAppointments() {
           document.getElementById('modalStatusDetailContainer').classList.toggle('d-none', !data.statusDetail || data.statusDetail === '-');
         });
       });
+      const appointmentData = document.getElementById('appointmentData');
+const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || '[]');
 
-      const busyAppointments = <%- JSON.stringify(busyAppointments || []).replace(/</g, '\\u003c') %>;
 
+      
       document.querySelectorAll('.confirm-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
