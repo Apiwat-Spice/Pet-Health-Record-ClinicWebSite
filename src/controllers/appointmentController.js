@@ -1,4 +1,3 @@
-
 const supabase = require('../../config/supabase');
 
 const REDIRECT_URL = '/appointments';
@@ -14,9 +13,7 @@ const STATUS_COLORS = {
 };
 
 function redirectWithMessage(res, type, message) {
-  return res.redirect(
-    `${REDIRECT_URL}?${type}=${encodeURIComponent(message)}`,
-  );
+  return res.redirect(`${REDIRECT_URL}?${type}=${encodeURIComponent(message)}`);
 }
 
 function hasPermission(user) {
@@ -29,47 +26,39 @@ function parsePositiveInteger(value) {
 }
 
 function parseAppointmentDateTime(value) {
-  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(
-    String(value || ''),
-  );
-
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) return null;
-
-  const [, date, hour, minute] = match;
-  const year = Number(date.slice(0, 4));
-  const month = Number(date.slice(5, 7));
-  const day = Number(date.slice(8, 10));
-  const hours = Number(hour);
-  const minutes = Number(minute);
-
-  const parsedDate = new Date(year, month - 1, day, hours, minutes);
-
+  const [, year, month, day, hour, minute] = match;
+  const dateTime = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  );
   if (
-    parsedDate.getFullYear() !== year ||
-    parsedDate.getMonth() !== month - 1 ||
-    parsedDate.getDate() !== day ||
-    parsedDate.getHours() !== hours ||
-    parsedDate.getMinutes() !== minutes
+    dateTime.getFullYear() !== Number(year) ||
+    dateTime.getMonth() !== Number(month) - 1 ||
+    dateTime.getDate() !== Number(day) ||
+    dateTime.getHours() !== Number(hour) ||
+    dateTime.getMinutes() !== Number(minute)
   ) {
     return null;
   }
-
-  if (hours > 23 || minutes > 59 || minutes % 30 !== 0) {
-    return null;
-  }
-
   return {
-    appointment_date: date,
+    dateTime,
+    appointment_date: `${year}-${month}-${day}`,
     appointment_time: `${hour}:${minute}:00`,
-    dateTime: parsedDate,
-    minutes: hours * 60 + minutes,
   };
 }
 
 async function getAppointmentForUpdate(id) {
   const { data, error } = await supabase
     .from('appointments')
-    .select('appointment_id, pet_id, vet_id, appointment_date, appointment_time, status')
+    .select(
+      'appointment_id, pet_id, vet_id, appointment_date, appointment_time, status',
+    )
     .eq('appointment_id', id)
     .maybeSingle();
 
@@ -137,8 +126,7 @@ async function getAppointmentConflict({
       Number(String(appointment.appointment_time).slice(0, 2)) * 60 +
       Number(String(appointment.appointment_time).slice(3, 5));
 
-    const overlaps =
-      Math.abs(existingMinutes - requestedMinutes) < 30;
+    const overlaps = Math.abs(existingMinutes - requestedMinutes) < 30;
 
     return (
       overlaps &&
@@ -154,7 +142,8 @@ exports.showAppointments = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         appointment_id, pet_id, vet_id, clinic_staff_id,
         appointment_date, appointment_time, type, title, detail,
         status, status_detail,
@@ -163,7 +152,8 @@ exports.showAppointments = async (req, res) => {
           pet_owners (first_name, last_name, username)
         ),
         vets (first_name, last_name)
-      `)
+      `,
+      )
       .order('appointment_date', { ascending: true })
       .order('appointment_time', { ascending: true });
 
@@ -179,7 +169,9 @@ exports.showAppointments = async (req, res) => {
 
     const { data: busyAppointments, error: busyError } = await supabase
       .from('appointments')
-      .select('appointment_id, pet_id, vet_id, appointment_date, appointment_time')
+      .select(
+        'appointment_id, pet_id, vet_id, appointment_date, appointment_time',
+      )
       .in('status', ACTIVE_STATUSES)
       .not('vet_id', 'is', null);
 
@@ -205,10 +197,7 @@ exports.showAppointments = async (req, res) => {
         appointment.pets?.pet_owners?.username ||
         '-',
       vet_name:
-        [
-          appointment.vets?.first_name,
-          appointment.vets?.last_name,
-        ]
+        [appointment.vets?.first_name, appointment.vets?.last_name]
           .filter(Boolean)
           .join(' ') || '-',
     }));
@@ -247,13 +236,15 @@ exports.getAppointmentCalendarEvents = async (req, res) => {
 
     let query = supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         appointment_id, pet_id, vet_id,
         appointment_date, appointment_time,
         title, type, status,
         pets(pet_name),
         vets(first_name, last_name)
-      `)
+      `,
+      )
       .in('status', CALENDAR_STATUSES)
       .order('appointment_date', { ascending: true })
       .order('appointment_time', { ascending: true });
@@ -311,18 +302,21 @@ exports.createAppointment = async (req, res) => {
   }
 
   try {
-    const {
-      pet_id,
-      vet_id,
-      appointment_datetime,
-      type,
-      title,
-      detail,
-    } = req.body;
+    const { pet_id, vet_id, appointment_datetime, type, title, detail } =
+      req.body;
 
     const petId = parsePositiveInteger(pet_id);
     const vetId = parsePositiveInteger(vet_id);
     const dateTime = parseAppointmentDateTime(appointment_datetime);
+
+    console.log({
+      pet_id,
+      petId,
+      vet_id,
+      vetId,
+      appointment_datetime,
+      dateTime,
+    });
 
     if (!petId || !vetId || !dateTime) {
       return redirectWithMessage(
@@ -331,12 +325,16 @@ exports.createAppointment = async (req, res) => {
         'กรุณาตรวจสอบสัตว์เลี้ยง สัตวแพทย์ และวันเวลานัด โดยเลือกเวลาเป็นช่วงละ 30 นาที',
       );
     }
+    const appointmentDate = new Date(dateTime.dateTime);
+    const today = new Date();
+    appointmentDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
-    if (dateTime.dateTime < new Date()) {
+    if (appointmentDate < today) {
       return redirectWithMessage(
         res,
         'error',
-        'ไม่สามารถเลือกเวลาที่ผ่านมาแล้วได้',
+        'ไม่สามารถเลือกวันที่ผ่านมาแล้วได้',
       );
     }
 
@@ -355,11 +353,7 @@ exports.createAppointment = async (req, res) => {
     const vet = await getActiveVet(vetId);
 
     if (!vet) {
-      return redirectWithMessage(
-        res,
-        'error',
-        'ไม่พบสัตวแพทย์ที่เปิดใช้งาน',
-      );
+      return redirectWithMessage(res, 'error', 'ไม่พบสัตวแพทย์ที่เปิดใช้งาน');
     }
 
     const hasConflict = await getAppointmentConflict({
@@ -379,27 +373,21 @@ exports.createAppointment = async (req, res) => {
 
     const clinicStaffId = await getClinicStaffId(user);
 
-    const { error: insertError } = await supabase
-      .from('appointments')
-      .insert({
-        pet_id: petId,
-        vet_id: vetId,
-        clinic_staff_id: clinicStaffId,
-        appointment_date: dateTime.appointment_date,
-        appointment_time: dateTime.appointment_time,
-        type: type || 'Appointment',
-        title: String(title || '').trim() || null,
-        detail: String(detail || '').trim() || null,
-        status: 'confirmed',
-      });
+    const { error: insertError } = await supabase.from('appointments').insert({
+      pet_id: petId,
+      vet_id: vetId,
+      clinic_staff_id: clinicStaffId,
+      appointment_date: dateTime.appointment_date,
+      appointment_time: dateTime.appointment_time,
+      type: type || 'Appointment',
+      title: String(title || '').trim() || null,
+      detail: String(detail || '').trim() || null,
+      status: 'confirmed',
+    });
 
     if (insertError) throw insertError;
 
-    return redirectWithMessage(
-      res,
-      'success',
-      'เพิ่มนัดหมายเรียบร้อยแล้ว',
-    );
+    return redirectWithMessage(res, 'success', 'เพิ่มนัดหมายเรียบร้อยแล้ว');
   } catch (error) {
     console.error('createAppointment error:', error);
 
@@ -461,9 +449,11 @@ exports.confirmAppointment = async (req, res) => {
     });
 
     if (hasConflict) {
-      return res.status(409).send(
-        'สัตวแพทย์หรือสัตว์เลี้ยงมีนัดหมายในช่วงเวลานี้ กรุณาเลือกเวลาอื่น',
-      );
+      return res
+        .status(409)
+        .send(
+          'สัตวแพทย์หรือสัตว์เลี้ยงมีนัดหมายในช่วงเวลานี้ กรุณาเลือกเวลาอื่น',
+        );
     }
 
     const clinicStaffId = await getClinicStaffId(user);
@@ -483,7 +473,9 @@ exports.confirmAppointment = async (req, res) => {
     if (updateError) throw updateError;
 
     if (!updated) {
-      return res.status(409).send('สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่');
+      return res
+        .status(409)
+        .send('สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่');
     }
 
     return res.redirect(REDIRECT_URL);
@@ -550,7 +542,9 @@ exports.cancelAppointment = async (req, res) => {
     if (error) throw error;
 
     if (!updated) {
-      return res.status(409).send('สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่');
+      return res
+        .status(409)
+        .send('สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่');
     }
 
     return res.redirect(REDIRECT_URL);
