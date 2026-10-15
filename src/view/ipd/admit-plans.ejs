@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admit Plans - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f8f9fa;
+    }
+
+    .table th,
+    .table td {
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .table thead th {
+      background: #f1f3f5;
+    }
+  </style>
+</head>
+
+<body>
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 px-md-4 py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <div>
+            <h3 class="mb-1">Admit Plans</h3>
+            <p class="text-muted mb-0">รายการเข้าพักรักษาสัตว์เลี้ยง</p>
+          </div>
+          <a href="/ipd/admit-plans/create" class="btn btn-success text-nowrap">
+            <i class="fa-solid fa-plus me-1"></i> Add Admit Plan
+          </a>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <input type="search" id="planSearch" class="form-control" placeholder="ค้นหาชื่อสัตว์ เจ้าของ หรือห้อง...">
+              </div>
+              <div class="col-md-4">
+                <select id="statusFilter" class="form-select">
+  <option value="">ทุกสถานะ</option>
+  <option value="planned">Planned</option>
+  <option value="admitted">Admitted</option>
+  <option value="discharged">Discharged</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover" id="plansTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Pet / Owner</th>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>วันคงเหลือ / เกินกำหนด</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!admitPlans.length) { %>
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">ยังไม่มีข้อมูล Admit Plan</td>
+                  </tr>
+                  <% } %>
+                  <% admitPlans.forEach(plan => { 
+                    const pet = plan.pets || {};
+                    const owner = pet.pet_owners || {};
+                    const petName = pet.pet_name || '-';
+                    const ownerName = `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || owner.username || '-';
+                    const roomCode = plan.ipd_rooms?.room_code || '-';
+                    const searchText = `${petName} ${ownerName} ${roomCode}`.toLowerCase();
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const targetDate = plan.check_out_date ? new Date(`${plan.check_out_date}T00:00:00`) : null;
+                    const dayDiff = targetDate ? Math.round((targetDate - today) / 86400000) : null;
+                    const checkInDate = new Date(`${plan.check_in_date}T00:00:00`);
+                    const stayDays = Math.max(0, Math.floor((today - checkInDate) / 86400000));
+                  %>
+                  <tr class="plan-row" data-search="<%= searchText %>" data-status="<%= plan.status %>">
+                    <td><%= plan.admit_plan_id %></td>
+                    <td>
+                      <div class="fw-medium"><%= petName %></div>
+                      <small class="text-muted"><%= ownerName %></small>
+                    </td>
+                    <td><%= roomCode %></td>
+                    <td>
+                      <%= plan.check_in_date %><br>
+                      <small class="text-muted"><%= String(plan.check_in_time).slice(0, 5) %></small>
+                    </td>
+                    <td>
+                      <% if (plan.check_out_date) { %>
+                      <%= plan.check_out_date %><br>
+                      <small class="text-muted"><%= String(plan.check_out_time).slice(0, 5) %></small>
+                      <% } else { %>
+                      <span class="text-muted">ไม่กำหนด</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (plan.status === 'discharged') { %>
+                      <span class="text-muted">ออกแล้ว</span>
+                      <% } else if (dayDiff !== null && dayDiff > 0) { %>
+                      <span class="text-success fw-medium">+<%= dayDiff %> วัน</span>
+                      <% } else if (dayDiff === 0) { %>
+                      <span class="text-primary fw-medium">0 วัน · วันนี้</span>
+                      <% } else if (dayDiff !== null && dayDiff < 0) { %>
+                      <span class="text-danger fw-medium"><%= dayDiff %> วัน</span>
+                      <% } else { %>
+                      <span class="text-muted">พักมาแล้ว <%= stayDays %> วัน</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (plan.status === 'planned') { %>
+                      <span class="badge text-bg-warning">Planned</span>
+                      <% } else if (plan.status === 'admitted') { %>
+                      <span class="badge text-bg-success">Admitted</span>
+                      <% } else if (plan.status === 'discharged') { %>
+                      <span class="badge text-bg-secondary">Discharged</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span title="<%= plan.note || '' %>">
+                        <%= plan.note ? (plan.note.length > 35 ? plan.note.slice(0, 35) + '...' : plan.note) : '-' %>
+                      </span>
+                    </td>
+                    <td>
+
+<% if (plan.status === 'planned') { %>
+  <form action="/ipd/admit-plans/<%= plan.admit_plan_id %>/check-in" method="POST">
+    <button type="submit" class="btn btn-success btn-sm text-nowrap">
+      <i class="fa-solid fa-right-to-bracket me-1"></i>Check-in
+    </button>
+  </form>
+<% } else if (plan.status === 'admitted') { %>
+  <button type="button"
+    class="btn btn-danger btn-sm text-nowrap"
+    data-bs-toggle="modal"
+    data-bs-target="#checkoutModal-<%= plan.admit_plan_id %>">
+    <i class="fa-solid fa-right-from-bracket me-1"></i>Check-out
+  </button>
+
+  <div class="modal fade" id="checkoutModal-<%= plan.admit_plan_id %>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form action="/ipd/admit-plans/<%= plan.admit_plan_id %>/check-out" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>ยืนยัน Check-out
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+          </div>
+          <div class="modal-body">
+            <p>คุณต้องการ Check-out สัตว์เลี้ยง <strong><%= petName %></strong> ใช่หรือไม่?</p>
+            <div class="alert alert-warning">
+              หากออกก่อนกำหนด ระบบจะบันทึกวันและเวลาที่ออกจริง 
+            </div>
+            <label class="form-label fw-medium" for="checkout-detail-<%= plan.admit_plan_id %>">
+              รายละเอียด / เหตุผลการ Check-out <span class="text-danger">*</span>
+            </label>
+            <textarea
+              id="checkout-detail-<%= plan.admit_plan_id %>"
+              name="EarlyCheckOut_Detail"
+              class="form-control mb-3"
+              rows="3"
+              maxlength="2000"
+              placeholder="ระบุเหตุผลหรือรายละเอียดก่อน Check-out"
+              required></textarea>
+            <div class="form-check">
+              <input class="form-check-input"
+                type="checkbox"
+                id="checkout-consent-<%= plan.admit_plan_id %>"
+                required>
+              <label class="form-check-label" for="checkout-consent-<%= plan.admit_plan_id %>">
+                ยืนยันว่าตรวจสอบข้อมูลแล้ว และยินยอมให้บันทึกการ Check-out
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-danger">
+              <i class="fa-solid fa-check me-1"></i>ยืนยัน Check-out
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+<% } else if (plan.status === 'discharged') { %>
+  <span class="text-muted">เสร็จสิ้น</span>
+<% } %>
+
+</td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+              <div id="noResults" class="text-center text-muted py-4 d-none">ไม่พบข้อมูลที่ค้นหา</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const searchInput = document.getElementById('planSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const rows = document.querySelectorAll('.plan-row');
+    const noResults = document.getElementById('noResults');
+
+    function filterPlans() {
+      const keyword = searchInput.value.trim().toLowerCase();
+      const status = statusFilter.value;
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const matchSearch = row.dataset.search.includes(keyword);
+        const matchStatus = !status || row.dataset.status === status;
+        const visible = matchSearch && matchStatus;
+        row.classList.toggle('d-none', !visible);
+        if (visible) visibleCount++;
+      });
+
+      noResults.classList.toggle('d-none', visibleCount > 0 || rows.length === 0);
+    }
+
+    searchInput.addEventListener('input', filterPlans);
+    statusFilter.addEventListener('change', filterPlans);
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

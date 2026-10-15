@@ -15,4 +15,7 @@ router.get('/admit-plans', requireClinic, ipdController.listAdmitPlans);
 router.get('/admit-plans/create', requireClinic, ipdController.showCreateAdmitPlan);
 router.post('/admit-plans/create', requireClinic, ipdController.createAdmitPlan);
 
+
+router.post('/admit-plans/:id/check-in', requireClinic, ipdController.checkIn);
+router.post('/admit-plans/:id/check-out', requireClinic, ipdController.checkOut);
 module.exports = router;

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Admit Plan - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', sans-serif; background: #f8f9fa; }
+    .form-card { border: 0; border-radius: 12px; }
+    .form-label { font-weight: 500; }
+  </style>
+</head>
+<body>
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 px-md-4 py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <div>
+            <h3 class="mb-1">Create Admit Plan</h3>
+            <p class="text-muted mb-0">สร้างแผนเข้าพักรักษาสัตว์เลี้ยง</p>
+          </div>
+          <a href="/ipd/admit-plans" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> กลับ
+          </a>
+        </div>
+
+        <% if (locals.error) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <form action="/ipd/admit-plans/create" method="POST" id="admitPlanForm">
+          <div class="card form-card shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h5 class="mb-3"><i class="fa-solid fa-bed me-2"></i>Room Information</h5>
+              <div class="mb-3">
+                <label for="room_id" class="form-label">IPD Room <span class="text-danger">*</span></label>
+                <select class="form-select" id="room_id" name="room_id" required>
+                  <option value="">-- เลือกห้อง --</option>
+                  <% rooms.forEach(room => { %>
+                    <option value="<%= room.room_id %>" <%= String(form.room_id || '') === String(room.room_id) ? 'selected' : '' %>>
+                      <%= room.room_code %> · <%= room.type %> · รองรับ <%= room.pet_amount %> ตัว
+                    </option>
+                  <% }) %>
+                </select>
+                <% if (!rooms.length) { %>
+                  <div class="form-text text-danger">ไม่มีห้องที่พร้อมรับสัตว์ กรุณาตรวจสอบสถานะห้อง</div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-card shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h5 class="mb-3"><i class="fa-solid fa-paw me-2"></i>Pet Information</h5>
+              <div class="mb-3">
+                <label for="pet_owner_id" class="form-label">Pet Owner <span class="text-danger">*</span></label>
+                <select class="form-select" id="pet_owner_id" name="pet_owner_id" required>
+                  <option value="">-- เลือกเจ้าของสัตว์เลี้ยง --</option>
+                  <% owners.forEach(owner => { %>
+                    <option value="<%= owner.pet_owner_id %>" <%= String(form.pet_owner_id || '') === String(owner.pet_owner_id) ? 'selected' : '' %>>
+                      <%= owner.first_name %> <%= owner.last_name %> (<%= owner.username %>)
+                    </option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="pet_id" class="form-label">Pet <span class="text-danger">*</span></label>
+                <select class="form-select" id="pet_id" name="pet_id" required>
+                  <option value="">-- เลือกสัตว์เลี้ยง --</option>
+                </select>
+                <div class="form-text">รายชื่อสัตว์เลี้ยงจะแสดงตามเจ้าของที่เลือก</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-card shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h5 class="mb-3"><i class="fa-regular fa-calendar-check me-2"></i>Admission Schedule</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="check_in_date" class="form-label">Check-in Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" id="check_in_date" name="check_in_date" value="<%= form.check_in_date || '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="check_in_time" class="form-label">Check-in Time <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" id="check_in_time" name="check_in_time" value="<%= form.check_in_time || '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="check_out_date" class="form-label">Check-out Date</label>
+                  <input type="date" class="form-control" id="check_out_date" name="check_out_date" value="<%= form.check_out_date || '' %>">
+                  <div class="form-text">ไม่บังคับ หากยังไม่ทราบวันออกให้เว้นว่าง</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="check_out_time" class="form-label">Check-out Time</label>
+                  <input type="time" class="form-control" id="check_out_time" name="check_out_time" value="<%= form.check_out_time || '' %>">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-card shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h5 class="mb-3"><i class="fa-solid fa-notes-medical me-2"></i>Note / Routine</h5>
+              <label for="note" class="form-label">รายละเอียดการดูแล</label>
+              <textarea class="form-control" id="note" name="note" rows="7" placeholder="ตัวอย่าง Routine:
+ให้อาหารวันละ 2 ครั้ง เช้าและเย็น
+ให้ยาตามเวลาที่สัตวแพทย์กำหนด
+ทำแผลวันละ 1 ครั้ง
+ตรวจวัดอุณหภูมิทุก 8 ชั่วโมง
+สังเกตการกินอาหารและน้ำ
+บันทึกอาการผิดปกติ
+แจ้งสัตวแพทย์เมื่อพบอาการผิดปกติ"><%= form.note || '' %></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="/ipd/admit-plans" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success" id="submitBtn" <%= !rooms.length ? 'disabled' : '' %>>
+              <i class="fa-solid fa-floppy-disk me-1"></i> Save Admit Plan
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const pets = <%- JSON.stringify(pets).replace(/</g, '\\u003c') %>;
+    const ownerSelect = document.getElementById('pet_owner_id');
+    const petSelect = document.getElementById('pet_id');
+    const savedPetId = <%- JSON.stringify(String(form.pet_id || '')) %>;
+
+    function filterPets() {
+      const ownerId = ownerSelect.value;
+      const previousPetId = petSelect.value || savedPetId;
+      petSelect.innerHTML = '<option value="">-- เลือกสัตว์เลี้ยง --</option>';
+
+      pets.filter(pet => String(pet.pet_owner_id) === ownerId).forEach(pet => {
+        const option = document.createElement('option');
+        option.value = pet.pet_id;
+        option.textContent = `${pet.pet_name} · ${pet.species || pet.animal_type || 'ไม่ระบุสายพันธุ์'}`;
+        if (String(pet.pet_id) === previousPetId) option.selected = true;
+        petSelect.appendChild(option);
+      });
+
+      if (ownerId && petSelect.options.length === 1) {
+        petSelect.options[0].textContent = '-- เจ้าของนี้ยังไม่มีข้อมูลสัตว์เลี้ยง --';
+      }
+    }
+
+    ownerSelect.addEventListener('change', () => {
+      petSelect.value = '';
+      filterPets();
+    });
+
+    filterPets();
+
+    const checkInDate = document.getElementById('check_in_date');
+    const checkOutDate = document.getElementById('check_out_date');
+    const checkOutTime = document.getElementById('check_out_time');
+
+    function updateCheckOutMin() {
+      checkOutDate.min = checkInDate.value;
+      if (checkOutDate.value && checkOutDate.value < checkInDate.value) {
+        checkOutDate.setCustomValidity('วันออกต้องไม่อยู่ก่อนวันเข้า');
+      } else {
+        checkOutDate.setCustomValidity('');
+      }
+    }
+
+    checkInDate.addEventListener('change', updateCheckOutMin);
+    checkOutDate.addEventListener('change', updateCheckOutMin);
+
+    document.getElementById('admitPlanForm').addEventListener('submit', event => {
+      if (Boolean(checkOutDate.value) !== Boolean(checkOutTime.value)) {
+        event.preventDefault();
+        alert('หากกำหนดวันออก ต้องระบุทั้งวันที่และเวลา Check-out');
+        return;
+      }
+
+      if (checkOutDate.value && checkOutDate.value === checkInDate.value &&
+          checkOutTime.value < document.getElementById('check_in_time').value) {
+        event.preventDefault();
+        alert('เวลา Check-out ต้องไม่อยู่ก่อนเวลา Check-in');
+        return;
+      }
+
+      const button = document.getElementById('submitBtn');
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

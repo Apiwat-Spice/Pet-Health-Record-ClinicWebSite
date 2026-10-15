@@ -84,45 +84,314 @@ exports.createRoom = async (req, res) => {
   }
 };
 
-exports.roomDetail = async (req, res) => {
-  const roomId = req.params.id;
-
-  if (!/^\d+$/.test(roomId)) {
-    return res.status(400).send('รหัสห้องไม่ถูกต้อง');
-  }
-
+exports.listAdmitPlans = async (req, res) => {
   try {
-    const { data: room, error } = await supabase
-      .from('ipd_rooms')
-      .select('*')
-      .eq('room_id', roomId)
-      .maybeSingle();
+    const { data: admitPlans, error } = await supabase
+      .from('admit_plans')
+      .select(`
+        admit_plan_id,
+        room_id,
+        pet_id,
+        check_in_date,
+        check_in_time,
+        check_out_date,
+        check_out_time,
+        note,
+        status,
+        ipd_rooms(room_code, type),
+        pets(
+          pet_name,
+          animal_type,
+          species,
+          pet_owners(first_name, last_name, username)
+        )
+      `)
+      .order('check_in_date', { ascending: false })
+      .order('check_in_time', { ascending: false });
 
     if (error) throw error;
 
-    if (!room) {
-      return res.status(404).send('ไม่พบข้อมูลห้อง IPD');
-    }
-
-res.render('ipd/room-detail', {
-  user: req.user || req.session?.user || req.session?.account || null,
-  activePage: 'ipd-room-list',
-  room,
-});
+    res.render('ipd/admit-plans', {
+      user: res.locals.user || req.session?.user || null,
+      activePage: 'admit-plans',
+      admitPlans: admitPlans || []
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send('ไม่สามารถโหลดรายละเอียดห้องได้');
+    res.status(500).send('ไม่สามารถโหลดรายการ Admit Plans ได้');
   }
 };
 
-exports.listAdmitPlans = async (req, res) => {
-  // โหลดรายการ Admit Plans
-};
+async function renderAdmitPlanForm(req, res, form = {}, error = null) {
+  const [roomsResult, ownersResult, petsResult] = await Promise.all([
+    supabase.from('ipd_rooms').select('room_id, room_code, type, pet_amount, status').eq('status', 'not_full').order('room_code'),
+    supabase.from('pet_owners').select('pet_owner_id, username, first_name, last_name').order('first_name'),
+    supabase.from('pets').select('pet_id, pet_owner_id, pet_name, animal_type, species').order('pet_name')
+  ]);
 
-exports.showCreateAdmitPlan = (req, res) => {
-  // แสดงฟอร์มสร้าง Admit Plan
+  if (roomsResult.error) throw roomsResult.error;
+  if (ownersResult.error) throw ownersResult.error;
+  if (petsResult.error) throw petsResult.error;
+
+  return res.status(error ? 400 : 200).render('ipd/admit-plan-form', {
+    user: res.locals.user || req.session?.user || null,
+    activePage: 'admit-plan-form',
+    rooms: roomsResult.data || [],
+    owners: ownersResult.data || [],
+    pets: petsResult.data || [],
+    form,
+    error
+  });
+}
+
+exports.showCreateAdmitPlan = async (req, res) => {
+  try {
+    await renderAdmitPlanForm(req, res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('ไม่สามารถโหลดฟอร์ม Admit Plan ได้');
+  }
 };
 
 exports.createAdmitPlan = async (req, res) => {
-  // บันทึก Admit Plan
+  const room_id = Number(req.body.room_id);
+  const pet_owner_id = Number(req.body.pet_owner_id);
+  const pet_id = Number(req.body.pet_id);
+  const check_in_date = String(req.body.check_in_date || '');
+  const check_in_time = String(req.body.check_in_time || '');
+  const check_out_date = String(req.body.check_out_date || '');
+  const check_out_time = String(req.body.check_out_time || '');
+  const note = String(req.body.note || '').trim() || null;
+
+  const form = {
+    room_id: req.body.room_id || '',
+    pet_owner_id: req.body.pet_owner_id || '',
+    pet_id: req.body.pet_id || '',
+    check_in_date,
+    check_in_time,
+    check_out_date,
+    check_out_time,
+    note
+  };
+
+  const fail = async (message) => {
+    try {
+      await renderAdmitPlanForm(req, res, form, message);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('ไม่สามารถโหลดฟอร์ม Admit Plan ได้');
+    }
+  };
+
+  if (!Number.isInteger(room_id) || room_id <= 0) {
+    return fail('กรุณาเลือกห้อง IPD');
+  }
+
+  if (!Number.isInteger(pet_owner_id) || pet_owner_id <= 0) {
+    return fail('กรุณาเลือกเจ้าของสัตว์เลี้ยง');
+  }
+
+  if (!Number.isInteger(pet_id) || pet_id <= 0) {
+    return fail('กรุณาเลือกสัตว์เลี้ยง');
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(check_in_date) || !/^\d{2}:\d{2}$/.test(check_in_time)) {
+    return fail('กรุณาระบุวันที่และเวลา Check-in ให้ถูกต้อง');
+  }
+
+if (Boolean(check_out_date) !== Boolean(check_out_time)) {
+  return fail('หากกำหนดวันออก ต้องระบุทั้งวันที่และเวลา Check-out');
+}
+
+  if (check_out_date && (
+    !/^\d{4}-\d{2}-\d{2}$/.test(check_out_date) ||
+    !/^\d{2}:\d{2}$/.test(check_out_time)
+  )) {
+    return fail('กรุณาระบุวันที่และเวลา Check-out ให้ถูกต้อง');
+  }
+
+  if (check_out_date && (
+    check_out_date < check_in_date ||
+    (check_out_date === check_in_date && check_out_time < check_in_time)
+  )) {
+    return fail('เวลา Check-out ต้องไม่อยู่ก่อนเวลา Check-in');
+  }
+
+  try {
+    const [roomResult, petResult] = await Promise.all([
+      supabase.from('ipd_rooms').select('room_id, status').eq('room_id', room_id).maybeSingle(),
+      supabase.from('pets').select('pet_id, pet_owner_id').eq('pet_id', pet_id).eq('pet_owner_id', pet_owner_id).maybeSingle()
+    ]);
+
+    if (roomResult.error) throw roomResult.error;
+    if (petResult.error) throw petResult.error;
+
+    if (!roomResult.data || roomResult.data.status !== 'not_full') {
+      return fail('ไม่พบห้อง หรือห้องนี้ไม่พร้อมรับสัตว์เข้าพัก');
+    }
+
+    if (!petResult.data) {
+      return fail('ไม่พบสัตว์เลี้ยงของเจ้าของที่เลือก');
+    }
+
+    const { data, error } = await supabase
+      .from('admit_plans')
+      .insert([{
+        room_id,
+        pet_id,
+        check_in_date,
+        check_in_time: `${check_in_time}:00`,
+        check_out_date: check_out_date || null,
+        check_out_time: check_out_time ? `${check_out_time}:00` : null,
+        note,
+        status: 'planned'
+      }])
+      .select('admit_plan_id')
+      .single();
+
+    if (error) throw error;
+
+    return res.redirect('/ipd/admit-plans');
+  } catch (error) {
+    console.error(error);
+    return fail('บันทึก Admit Plan ไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองใหม่');
+  }
+};
+
+exports.checkIn = async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.redirect('/ipd/admit-plans');
+  }
+  try {
+    const { data, error } = await supabase
+      .from('admit_plans')
+      .select('admit_plan_id, status')
+      .eq('admit_plan_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.status !== 'planned') {
+      return res.redirect('/ipd/admit-plans');
+    }
+    const { error: updateError } = await supabase
+      .from('admit_plans')
+      .update({ status: 'admitted' })
+      .eq('admit_plan_id', id);
+    if (updateError) throw updateError;
+    return res.redirect('/ipd/admit-plans');
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('ไม่สามารถ Check-in ได้');
+  }
+};
+
+
+exports.checkOut = async (req, res) => {
+  const id = Number(req.params.id);
+  const detail = String(req.body.EarlyCheckOut_Detail || '').trim();
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.redirect('/ipd/admit-plans');
+  }
+
+  if (!detail) {
+    return res.status(400).send('กรุณากรอกรายละเอียดก่อน Check-out');
+  }
+
+  try {
+    const { data: plan, error: planError } = await supabase
+      .from('admit_plans')
+      .select('admit_plan_id, status')
+      .eq('admit_plan_id', id)
+      .maybeSingle();
+
+    if (planError) throw planError;
+
+    if (!plan || plan.status !== 'admitted') {
+      return res.redirect('/ipd/admit-plans');
+    }
+
+    const now = new Date();
+    const date = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0')
+    ].join('-');
+
+    const time = [
+      String(now.getHours()).padStart(2, '0'),
+      String(now.getMinutes()).padStart(2, '0'),
+      String(now.getSeconds()).padStart(2, '0')
+    ].join(':');
+
+    const { error: updateError } = await supabase
+      .from('admit_plans')
+      .update({
+        status: 'discharged',
+        check_out_date: date,
+        check_out_time: time,
+        EarlyCheckOut_Detail: detail
+      })
+      .eq('admit_plan_id', id)
+      .eq('status', 'admitted');
+
+    if (updateError) throw updateError;
+
+    return res.redirect('/ipd/admit-plans');
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('ไม่สามารถ Check-out ได้ กรุณาตรวจสอบข้อมูล');
+  }
+};
+
+
+
+exports.roomDetail = async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.redirect('/ipd/rooms');
+  }
+  try {
+    const { data: room, error: roomError } = await supabase
+      .from('ipd_rooms')
+      .select('*')
+      .eq('room_id', id)
+      .maybeSingle();
+    if (roomError) throw roomError;
+    if (!room) return res.status(404).send('ไม่พบข้อมูลห้อง');
+    const { data: admittedPets, error: petsError } = await supabase
+      .from('admit_plans')
+      .select(`
+        admit_plan_id,
+        check_in_date,
+        check_in_time,
+        check_out_date,
+        check_out_time,
+        status,
+        pets (
+          pet_id,
+          pet_name,
+          animal_type,
+          species,
+          pet_owners (
+            first_name,
+            last_name,
+            username
+          )
+        )
+      `)
+      .eq('room_id', id)
+      .eq('status', 'admitted')
+      .order('check_in_date', { ascending: false });
+    if (petsError) throw petsError;
+    return res.render('ipd/room-detail', {
+      user: res.locals.user || req.session?.user || null,
+      activePage: 'ipd-room-list',
+      room,
+      admittedPets: admittedPets || []
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('ไม่สามารถโหลดรายละเอียดห้องได้');
+  }
 };
