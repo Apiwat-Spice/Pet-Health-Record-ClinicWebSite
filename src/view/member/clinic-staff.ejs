@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic Staff - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @media (max-width: 576px) {
+      main {
+        padding: 1rem !important;
+      }
+    }
+    .table td,
+    .table th {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="mb-4">
+          <h2 class="fw-bold"><i class="fa-solid fa-user-tie text-primary me-2"></i>Clinic Staff</h2>
+          <p class="text-muted mb-0">จัดการข้อมูลสมาชิก Clinic Staff</p>
+        </div>
+        <% if (locals.success) { %>
+          <div class="alert alert-success alert-dismissible fade show">
+            <%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+        <% if (locals.error) { %>
+          <div class="alert alert-danger alert-dismissible fade show">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+              <div class="input-group" style="max-width: 340px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input id="memberSearch" type="search" class="form-control" placeholder="ค้นหาชื่อ อีเมล หรือเบอร์โทร">
+              </div>
+              <a href="/members/clinic-staff/create" class="btn btn-success text-nowrap">
+                <i class="fa-solid fa-plus me-1"></i> เพิ่ม Clinic Staff
+              </a>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!members || members.length === 0) { %>
+                    <tr>
+                      <td colspan="6" class="text-center text-muted py-5">
+                        <i class="fa-solid fa-users fa-2x mb-2 d-block"></i>
+                        ยังไม่มีสมาชิก
+                      </td>
+                    </tr>
+                  <% } else { %>
+                    <% members.forEach(m => { %>
+                      <tr data-member-row="<%= [m.first_name, m.last_name, m.email, m.phone, m.status].join(' ').toLowerCase() %>">
+                        <td><%= m.clinic_staff_id %></td>
+                        <td>
+                          <div class="fw-semibold"><%= m.first_name %> <%= m.last_name %></div>
+                        </td>
+                        <td><%= m.email || '-' %></td>
+                        <td><%= m.phone || '-' %></td>
+                        <td>
+                          <span class="badge <%= m.status === 'active' ? 'text-bg-success' : 'text-bg-secondary' %>">
+                            <%= m.status %>
+                          </span>
+                        </td>
+                        <td class="text-nowrap">
+                          <a class="btn btn-sm btn-outline-primary" href="/members/clinic-staff/<%= m.clinic_staff_id %>/edit">
+                            <i class="fa-solid fa-pen"></i>
+                          </a>
+                          <form data-delete-form class="d-inline" method="POST" action="/members/clinic-staff/<%= m.clinic_staff_id %>/delete">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">
+                              <i class="fa-solid fa-trash"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.querySelectorAll('[data-delete-form]').forEach(form => {
+      form.addEventListener('submit', e => {
+        if (!confirm('ยืนยันการลบสมาชิกคนนี้?')) {
+          e.preventDefault();
+        }
+      });
+    });
+    const search = document.getElementById('memberSearch');
+    if (search) {
+      search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        document.querySelectorAll('[data-member-row]').forEach(row => {
+          row.classList.toggle('d-none', !row.dataset.memberRow.includes(q));
+        });
+      });
+    }
+  </script>
+</body>
+</html>

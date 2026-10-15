@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vet Form - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @media (max-width: 576px) {
+      main { padding: 1rem !important; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="mb-4">
+          <h2 class="fw-bold"><i class="fa-solid fa-user-doctor text-primary me-2"></i>Vet Form</h2>
+          <p class="text-muted mb-0">กรอกข้อมูลสมาชิกเพื่อเพิ่มหรือแก้ไข</p>
+        </div>
+        <% if (locals.error) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <form method="POST" enctype="multipart/form-data" action="/members/vets/<%= member && member.vet_id ? member.vet_id + '/edit' : 'create' %>">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="firstName">ชื่อ <span class="text-danger">*</span></label>
+                  <input id="firstName" name="first_name" class="form-control" maxlength="100" value="<%= member ? member.first_name || '' : '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="lastName">นามสกุล <span class="text-danger">*</span></label>
+                  <input id="lastName" name="last_name" class="form-control" maxlength="100" value="<%= member ? member.last_name || '' : '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
+                  <input id="email" name="email" type="email" class="form-control" maxlength="255" value="<%= member ? member.email || '' : '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="phone">Phone</label>
+                  <input id="phone" name="phone" type="tel" class="form-control" maxlength="20" value="<%= member ? member.phone || '' : '' %>">
+                </div>
+                <% if (!member || !member.vet_id) { %>
+                  <div class="col-md-6">
+                    <label class="form-label" for="password">รหัสผ่านเริ่มต้น <span class="text-danger">*</span></label>
+                    <input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password" required>
+                    <div class="form-text">อย่างน้อย 8 ตัวอักษร</div>
+                  </div>
+                <% } %>
+                <div class="col-md-6">
+                  <label class="form-label" for="vetClass">Vet Class <span class="text-danger">*</span></label>
+                  <select id="vetClass" name="vet_class" class="form-select" required>
+                    <option value="1" <%= !member || Number(member.vet_class) === 1 ? 'selected' : '' %>>Class 1</option>
+                    <option value="2" <%= member && Number(member.vet_class) === 2 ? 'selected' : '' %>>Class 2</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="status">Status</label>
+                  <select id="status" name="status" class="form-select">
+                    <option value="active" <%= !member || member.status === 'active' ? 'selected' : '' %>>Active</option>
+                    <option value="inactive" <%= member && member.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="profileImage">รูปโปรไฟล์</label>
+                  <input id="profileImage" name="profile_image" type="file" accept="image/*" class="form-control">
+                  <div class="form-text">รองรับไฟล์รูปภาพ ขนาดไม่เกิน 5 MB <% if (member && member.profile_image_url) { %>เมื่อเลือกรูปใหม่ ระบบจะเปลี่ยนรูปเดิม<% } %></div>
+                  <div class="mt-3">
+                    <img id="profilePreview" src="<%= member && member.profile_image_url ? member.profile_image_url : '' %>" alt="Profile preview" class="rounded border <%= member && member.profile_image_url ? '' : 'd-none' %>" style="width:110px;height:110px;object-fit:cover">
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="/members/vets" class="btn btn-light">ยกเลิก</a>
+                <button type="submit" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>บันทึกข้อมูล</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const imageInput = document.getElementById('profileImage');
+    const preview = document.getElementById('profilePreview');
+    if (imageInput && preview) {
+      imageInput.addEventListener('change', () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('กรุณาเลือกไฟล์รูปภาพ');
+          imageInput.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('รูปภาพต้องมีขนาดไม่เกิน 5 MB');
+          imageInput.value = '';
+          return;
+        }
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove('d-none');
+      });
+    }
+  </script>
+</body>
+</html>
