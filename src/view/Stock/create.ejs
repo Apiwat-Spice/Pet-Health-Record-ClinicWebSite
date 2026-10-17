@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Stock - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @media (max-width: 576px) {
+      main { padding: 1rem !important; }
+    }
+    .stock-card { border: 0; box-shadow: 0 .125rem .5rem rgba(0,0,0,.06); }
+    .form-label { font-weight: 500; }
+    .required { color: #dc3545; }
+  </style>
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="mb-4">
+          <a href="/stock/overview" class="text-decoration-none text-muted small">
+            <i class="fa-solid fa-arrow-left me-1"></i> กลับไป Stock Overview
+          </a>
+          <h2 class="fw-bold mt-3"><i class="fa-solid fa-box text-primary me-2"></i>เพิ่มสินค้า</h2>
+          <p class="text-muted mb-0">กรอกข้อมูลสินค้าเพื่อเพิ่มเข้าสู่คลังของคลินิก</p>
+        </div>
+
+        <% if (locals.error) { %>
+          <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <form action="/stock/create" method="POST" id="stockForm">
+          <div class="card stock-card mb-4">
+            <div class="card-header bg-white py-3">
+              <h5 class="fw-bold mb-0"><i class="fa-solid fa-circle-info text-primary me-2"></i>ข้อมูลสินค้า</h5>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="name" class="form-label">ชื่อสินค้า <span class="required">*</span></label>
+                  <input type="text" id="name" name="name" class="form-control" list="stockNames" maxlength="255" placeholder="เลือกหรือพิมพ์ชื่อสินค้า" value="<%= formData.name || '' %>" required>
+                  <datalist id="stockNames">
+                    <% [...new Set(stocks.map(s => s.name).filter(Boolean))].forEach(name => { %>
+                      <option value="<%= name %>"></option>
+                    <% }) %>
+                  </datalist>
+                </div>
+                <div class="col-md-6">
+                  <label for="company" class="form-label">บริษัท / ผู้ผลิต</label>
+                  <input type="text" id="company" name="company" class="form-control" list="stockCompanies" maxlength="255" placeholder="เลือกหรือพิมพ์ชื่อบริษัท" value="<%= formData.company || '' %>">
+                  <datalist id="stockCompanies">
+                    <% [...new Set(stocks.map(s => s.company).filter(Boolean))].forEach(company => { %>
+                      <option value="<%= company %>"></option>
+                    <% }) %>
+                  </datalist>
+                </div>
+                <div class="col-md-6">
+                  <label for="category" class="form-label">หมวดหมู่ <span class="required">*</span></label>
+                  <input type="text" id="category" name="category" class="form-control" list="stockCategories" maxlength="100" placeholder="เลือกหรือพิมพ์หมวดหมู่" value="<%= formData.category || '' %>" required>
+                  <datalist id="stockCategories">
+                    <% [...new Set(stocks.map(s => s.category).filter(Boolean))].forEach(category => { %>
+                      <option value="<%= category %>"></option>
+                    <% }) %>
+                    <option value="general goods"></option>
+                    <option value="meds"></option>
+                    <option value="supplies"></option>
+                    <option value="vaccines"></option>
+                    <option value="prevention"></option>
+                    <option value="supplements"></option>
+                    <option value="sick-animal equipment"></option>
+                  </datalist>
+                  <div class="form-text">เลือกหมวดหมู่เดิมหรือพิมพ์หมวดหมู่ใหม่</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="type_unit" class="form-label">หน่วยนับ <span class="required">*</span></label>
+                  <input type="text" id="type_unit" name="type_unit" class="form-control" list="stockUnits" maxlength="50" placeholder="เช่น ชิ้น ขวด กล่อง เม็ด" value="<%= formData.type_unit || '' %>" required>
+                  <datalist id="stockUnits">
+                    <% [...new Set(stocks.map(s => s.type_unit).filter(Boolean))].forEach(unit => { %>
+                      <option value="<%= unit %>"></option>
+                    <% }) %>
+                    <option value="ชิ้น"></option>
+                    <option value="ขวด"></option>
+                    <option value="กล่อง"></option>
+                    <option value="เม็ด"></option>
+                    <option value="แพ็ค"></option>
+                    <option value="ถุง"></option>
+                  </datalist>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stock-card mb-4">
+            <div class="card-header bg-white py-3">
+              <h5 class="fw-bold mb-0"><i class="fa-solid fa-calculator text-primary me-2"></i>จำนวนและราคา</h5>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="quantity" class="form-label">จำนวนคงเหลือ <span class="required">*</span></label>
+                  <input type="number" id="quantity" name="quantity" class="form-control" min="0" step="1" value="<%= formData.quantity ?? 0 %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="price" class="form-label">ราคาต่อหน่วย (บาท) <span class="required">*</span></label>
+                  <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" value="<%= formData.price ?? 0 %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="buy_unit" class="form-label">จำนวนต่อหน่วยซื้อ <span class="required">*</span></label>
+                  <input type="number" id="buy_unit" name="buy_unit" class="form-control" min="0" step="0.01" value="<%= formData.buy_unit ?? 0 %>" required>
+                  <div class="form-text">ตัวอย่าง ซื้อ 1 กล่อง มี 10 ชิ้น ให้กรอก 10</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stock-card mb-4">
+            <div class="card-header bg-white py-3">
+              <h5 class="fw-bold mb-0"><i class="fa-solid fa-calendar-days text-primary me-2"></i>ข้อมูลวันหมดอายุ</h5>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="expires_status" class="form-label">สถานะวันหมดอายุ <span class="required">*</span></label>
+                  <select id="expires_status" name="expires_status" class="form-select" required>
+                    <option value="not_expired" <%= (formData.expires_status || 'not_expired') === 'not_expired' ? 'selected' : '' %>>Not expired</option>
+                    <option value="expired" <%= formData.expires_status === 'expired' ? 'selected' : '' %>>Expired</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="expires_at" class="form-label">วันหมดอายุ</label>
+                  <input type="date" id="expires_at" name="expires_at" class="form-control" value="<%= formData.expires_at || '' %>">
+                  <div class="form-text">หากไม่มีวันหมดอายุ สามารถเว้นว่างได้</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stock-card mb-4">
+            <div class="card-header bg-white py-3">
+              <h5 class="fw-bold mb-0"><i class="fa-solid fa-note-sticky text-primary me-2"></i>หมายเหตุ</h5>
+            </div>
+            <div class="card-body p-4">
+              <label for="note" class="form-label">รายละเอียดเพิ่มเติม</label>
+              <textarea id="note" name="note" class="form-control" rows="3" placeholder="รายละเอียดสินค้าเพิ่มเติม (ถ้ามี)"><%= formData.note || '' %></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end flex-wrap gap-2 mb-4">
+            <a href="/stock/overview" class="btn btn-light border px-4">ยกเลิก</a>
+            <button type="submit" class="btn btn-success px-4" id="submitButton">
+              <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกสินค้า
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const form = document.getElementById('stockForm');
+    const submitButton = document.getElementById('submitButton');
+    const statusSelect = document.getElementById('expires_status');
+    const expiryInput = document.getElementById('expires_at');
+    const nameInput = document.getElementById('name');
+    const companyInput = document.getElementById('company');
+    const categoryInput = document.getElementById('category');
+    const unitInput = document.getElementById('type_unit');
+    const stocks = <%- JSON.stringify(stocks).replace(/</g, '\\u003c') %>;
+
+    nameInput.addEventListener('change', () => {
+      const matched = stocks.find(s => s.name?.toLowerCase() === nameInput.value.trim().toLowerCase());
+      if (!matched) return;
+      if (!companyInput.value) companyInput.value = matched.company || '';
+      if (!categoryInput.value) categoryInput.value = matched.category || '';
+      if (!unitInput.value) unitInput.value = matched.type_unit || '';
+    });
+
+    function updateExpiryStatus() {
+      if (!expiryInput.value) return;
+      const today = new Date();
+      const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      statusSelect.value = expiryInput.value < localToday ? 'expired' : 'not_expired';
+    }
+
+    expiryInput.addEventListener('change', updateExpiryStatus);
+
+    form.addEventListener('submit', event => {
+      const quantity = Number(document.getElementById('quantity').value);
+      const price = Number(document.getElementById('price').value);
+      const buyUnit = Number(document.getElementById('buy_unit').value);
+
+      if (!Number.isInteger(quantity) || quantity < 0 || price < 0 || buyUnit < 0) {
+        event.preventDefault();
+        alert('กรุณาตรวจสอบจำนวนและราคาให้ถูกต้อง');
+        return;
+      }
+
+      if (expiryInput.value) updateExpiryStatus();
+
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
+    });
+  </script>
+</body>
+</html>

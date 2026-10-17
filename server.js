@@ -11,7 +11,8 @@ const appointmentRoutes = require('./src/routes/appointmentRoutes');
 const visitRecordRoutes = require('./src/routes/visitRecordRoutes');
 const memberRoutes = require('./src/routes/memberRoutes');
 const ipdRoutes = require('./src/routes/ipdRoutes');
-
+const stockRoutes = require('./src/routes/stockRoutes');
+const receiptRoutes = require('./src/routes/receiptRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -51,6 +52,9 @@ app.use('/appointments', appointmentRoutes);
 app.use('/visit-records', visitRecordRoutes);
 app.use('/members', memberRoutes);
 app.use('/ipd', ipdRoutes);
+app.use('/stock', stockRoutes);
+
+app.use('/receipt', receiptRoutes);
 // Logout
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {

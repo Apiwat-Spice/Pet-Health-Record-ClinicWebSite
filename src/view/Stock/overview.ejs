@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Overview - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @media (max-width: 576px) {
+      main { padding: 1rem !important; }
+    }
+    .stock-card { border: 0; box-shadow: 0 .125rem .5rem rgba(0,0,0,.06); }
+    .stock-table th { white-space: nowrap; }
+    .stock-table td { vertical-align: middle; }
+  </style>
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <div>
+            <h2 class="fw-bold"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Stock Overview</h2>
+            <p class="text-muted mb-0">จัดการสินค้าและตรวจสอบจำนวนคงเหลือในคลินิก</p>
+          </div>
+          <a href="/stock/create" class="btn btn-success">
+            <i class="fa-solid fa-plus me-1"></i> เพิ่มสินค้า
+          </a>
+        </div>
+
+        <% if (locals.success) { %>
+          <div class="alert alert-success alert-dismissible fade show">
+            <i class="fa-solid fa-circle-check me-2"></i><%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+        <% if (locals.error) { %>
+          <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-4">
+            <div class="card stock-card h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-primary-subtle text-primary p-3">
+                  <i class="fa-solid fa-boxes-stacked fa-xl"></i>
+                </div>
+                <div>
+                  <div class="text-muted small">รายการสินค้าทั้งหมด</div>
+                  <div class="fs-4 fw-bold"><%= stocks.length %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-4">
+            <div class="card stock-card h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-success-subtle text-success p-3">
+                  <i class="fa-solid fa-cubes-stacked fa-xl"></i>
+                </div>
+                <div>
+                  <div class="text-muted small">จำนวนรวมทุกหน่วย</div>
+                  <div class="fs-4 fw-bold"><%= stocks.reduce((sum, s) => sum + Number(s.quantity || 0), 0).toLocaleString('en-US') %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-4">
+            <div class="card stock-card h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-danger-subtle text-danger p-3">
+                  <i class="fa-solid fa-calendar-xmark fa-xl"></i>
+                </div>
+                <div>
+                  <div class="text-muted small">หมดอายุแล้ว</div>
+                  <div class="fs-4 fw-bold"><%= stocks.filter(s => s.current_expired).length %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card stock-card">
+          <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+              <h5 class="fw-bold mb-0">รายการสินค้า</h5>
+              <div class="input-group" style="max-width: 350px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" id="stockSearch" class="form-control" placeholder="ค้นหาสินค้า บริษัท หรือหมวดหมู่">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover stock-table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>ชื่อสินค้า</th>
+                    <th>บริษัท</th>
+                    <th>หมวดหมู่</th>
+                    <th>จำนวน</th>
+                    <th>ราคา/หน่วย</th>
+                    <th>วันหมดอายุ</th>
+                    <th>สถานะ</th>
+                    <th>หมายเหตุ</th>
+                  </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                  <% stocks.forEach((stock, index) => { %>
+                    <tr data-search="<%= [stock.name, stock.company, stock.category, stock.type_unit, stock.note].join(' ').toLowerCase() %>">
+                      <td><%= index + 1 %></td>
+                      <td class="fw-semibold"><%= stock.name %></td>
+                      <td><%= stock.company || '-' %></td>
+                      <td><span class="badge text-bg-light border"><%= stock.category %></span></td>
+                      <td class="text-nowrap"><%= Number(stock.quantity).toLocaleString('en-US') %> <%= stock.type_unit %></td>
+                      <td class="text-nowrap"><%= Number(stock.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                      <td class="text-nowrap"><%= stock.expires_at || '-' %></td>
+                      <td>
+                        <% if (stock.current_expired) { %>
+                          <span class="badge text-bg-danger">Expired</span>
+                        <% } else if (stock.expires_at && stock.expires_at === new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })) { %>
+                          <span class="badge text-bg-warning">Expiring today</span>
+                        <% } else if (stock.expires_at) { %>
+                          <span class="badge text-bg-success">Not expired</span>
+                        <% } else if (stock.expires_status === 'expired') { %>
+                          <span class="badge text-bg-danger">Expired</span>
+                        <% } else { %>
+                          <span class="badge text-bg-secondary">No expiry date</span>
+                        <% } %>
+                      </td>
+                      <td style="min-width: 150px;"><%= stock.note || '-' %></td>
+                    </tr>
+                  <% }) %>
+                  <% if (stocks.length === 0) { %>
+                    <tr>
+                      <td colspan="9" class="text-center text-muted py-5">
+                        <i class="fa-solid fa-box-open fa-3x mb-3 d-block"></i>
+                        ยังไม่มีสินค้าในระบบ
+                        <div class="mt-3"><a href="/stock/create" class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i>เพิ่มสินค้าแรก</a></div>
+                      </td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+              <p id="stockNoResult" class="text-center text-muted py-3 d-none">ไม่พบสินค้าที่ค้นหา</p>
+            </div>
+            <div class="text-muted small mt-2">พบ <span id="stockCount"><%= stocks.length %></span> รายการ</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const searchInput = document.getElementById('stockSearch');
+    const rows = [...document.querySelectorAll('#stockTableBody tr[data-search]')];
+    const countElement = document.getElementById('stockCount');
+    const noResult = document.getElementById('stockNoResult');
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim().toLowerCase();
+      let count = 0;
+      rows.forEach(row => {
+        const visible = row.dataset.search.includes(query);
+        row.classList.toggle('d-none', !visible);
+        if (visible) count++;
+      });
+      countElement.textContent = count;
+      noResult.classList.toggle('d-none', count > 0 || rows.length === 0);
+    });
+  </script>
+</body>
+</html>
