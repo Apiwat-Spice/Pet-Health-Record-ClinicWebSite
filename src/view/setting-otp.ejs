@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Change Password - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    body { min-height: 100vh; background: #f5f7fb; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .otp-card { width: 100%; max-width: 480px; border: 0; border-radius: 16px; box-shadow: 0 8px 30px rgba(30,50,80,.08); }
+    .otp-icon { width: 72px; height: 72px; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px; border-radius: 50%; background: #e8f1fa; color: #315f85; font-size: 28px; }
+    .btn-primary { background: #315f85; border-color: #315f85; }
+    .btn-primary:hover { background: #244967; border-color: #244967; }
+  </style>
+</head>
+<body>
+  <main class="card otp-card">
+    <div class="card-body p-4 p-md-5">
+      <div class="text-center mb-4">
+        <div class="otp-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3 class="fw-bold mb-2">เปลี่ยนรหัสผ่าน</h3>
+        <p class="text-secondary mb-0">WebClinic Account Security</p>
+      </div>
+
+      <% if (error) { %>
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-2"></i><%= error %></div>
+      <% } %>
+      <% if (success) { %>
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check me-2"></i><%= success %></div>
+      <% } %>
+
+      <% if (step === 'request') { %>
+        <p class="text-secondary text-center mb-4">ระบบจะส่งรหัส OTP ไปยังอีเมลบัญชีของคุณเพื่อยืนยันตัวตน</p>
+        <div class="mb-4">
+          <label class="form-label">อีเมลบัญชี</label>
+          <input type="email" class="form-control" value="<%= email %>" readonly>
+        </div>
+        <form action="/settings/password/otp" method="POST">
+          <button type="submit" class="btn btn-primary w-100 py-2"><i class="fa-solid fa-paper-plane me-2"></i>ส่งรหัส OTP</button>
+        </form>
+      <% } else if (step === 'verify') { %>
+        <p class="text-secondary text-center mb-4">กรอกรหัส 6 หลักที่ส่งไปยัง <strong><%= email %></strong></p>
+        <form action="/settings/password/verify" method="POST" id="verifyForm">
+          <div class="mb-4">
+            <label for="otp" class="form-label">รหัส OTP</label>
+            <input type="text" name="otp" id="otp" class="form-control form-control-lg text-center" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="000000" autocomplete="one-time-code" required autofocus>
+            <div class="form-text">รหัสมีอายุ 5 นาที และกรอกผิดได้ไม่เกิน 5 ครั้ง</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2"><i class="fa-solid fa-check me-2"></i>ยืนยัน OTP</button>
+        </form>
+        <form action="/settings/password/otp" method="POST" class="mt-3">
+          <button type="submit" class="btn btn-outline-secondary w-100">ขอ OTP ใหม่</button>
+        </form>
+      <% } else if (step === 'reset') { %>
+        <p class="text-secondary text-center mb-4">ยืนยันตัวตนแล้ว กรุณาตั้งรหัสผ่านใหม่</p>
+        <form action="/settings/password/reset" method="POST" id="resetForm">
+          <div class="mb-3">
+            <label for="password" class="form-label">รหัสผ่านใหม่</label>
+            <input type="password" name="password" id="password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
+            <div class="form-text">ความยาว 8–72 ตัวอักษร</div>
+          </div>
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label">ยืนยันรหัสผ่านใหม่</label>
+            <input type="password" name="confirm_password" id="confirm_password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
+            <div id="passwordMessage" class="form-text"></div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2" id="resetButton"><i class="fa-solid fa-key me-2"></i>บันทึกรหัสผ่านใหม่</button>
+        </form>
+      <% } %>
+
+      <div class="text-center mt-4">
+        <a href="/settings" class="text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>กลับไปหน้า Setting</a>
+      </div>
+    </div>
+  </main>
+  <script>
+    const resetForm = document.getElementById('resetForm');
+    if (resetForm) {
+      const password = document.getElementById('password');
+      const confirmPassword = document.getElementById('confirm_password');
+      const message = document.getElementById('passwordMessage');
+      const button = document.getElementById('resetButton');
+      function validatePassword() {
+        confirmPassword.setCustomValidity(password.value === confirmPassword.value ? '' : 'รหัสผ่านไม่ตรงกัน');
+        message.textContent = confirmPassword.value && password.value !== confirmPassword.value ? 'รหัสผ่านไม่ตรงกัน' : '';
+        message.className = password.value === confirmPassword.value ? 'form-text text-success' : 'form-text text-danger';
+      }
+      password.addEventListener('input', validatePassword);
+      confirmPassword.addEventListener('input', validatePassword);
+      resetForm.addEventListener('submit', event => {
+        validatePassword();
+        if (!resetForm.reportValidity()) {
+          event.preventDefault();
+          return;
+        }
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+      });
+    }
+    const verifyForm = document.getElementById('verifyForm');
+    if (verifyForm) {
+      verifyForm.addEventListener('submit', () => {
+        const button = verifyForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = 'กำลังตรวจสอบ...';
+      });
+    }
+  </script>
+</body>
+</html>

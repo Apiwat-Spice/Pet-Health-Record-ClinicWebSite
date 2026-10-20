@@ -13,6 +13,10 @@ const memberRoutes = require('./src/routes/memberRoutes');
 const ipdRoutes = require('./src/routes/ipdRoutes');
 const stockRoutes = require('./src/routes/stockRoutes');
 const receiptRoutes = require('./src/routes/receiptRoutes');
+const settingRoutes = require('./src/routes/settingRoutes');
+
+const requireActiveAccount = require('./src/middleware/requireActiveAccount');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -47,14 +51,15 @@ app.set('views', path.join(__dirname, 'src/view'));
 // Routes
 app.use('/', authRoutes);
 app.use('/', dashboardRoutes);
-app.use('/', petRoutes);
-app.use('/appointments', appointmentRoutes);
-app.use('/visit-records', visitRecordRoutes);
-app.use('/members', memberRoutes);
-app.use('/ipd', ipdRoutes);
-app.use('/stock', stockRoutes);
+app.use('/', requireActiveAccount, petRoutes);
+app.use('/appointments', requireActiveAccount, appointmentRoutes);
+app.use('/visit-records', requireActiveAccount, visitRecordRoutes);
+app.use('/members', requireActiveAccount, memberRoutes);
+app.use('/ipd', requireActiveAccount, ipdRoutes);
+app.use('/stock', requireActiveAccount, stockRoutes);
+app.use('/receipt', requireActiveAccount, receiptRoutes);
+app.use('/settings', requireActiveAccount, settingRoutes);
 
-app.use('/receipt', receiptRoutes);
 // Logout
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {

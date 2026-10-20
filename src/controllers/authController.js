@@ -2,9 +2,13 @@ const bcrypt = require('bcrypt');
 const supabase = require('../../config/supabase');
 // แสดงหน้า Login
 exports.showLogin = (req, res) => {
-  res.render('login', {
-    error: null
-  });
+    const errorMessage = {
+        account_disabled: 'บัญชีถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ'
+    };
+
+    res.render('login', {
+        error: errorMessage[req.query.error] || null
+    });
 };
 // แสดงหน้า Register
 exports.showRegister = (req, res) => {

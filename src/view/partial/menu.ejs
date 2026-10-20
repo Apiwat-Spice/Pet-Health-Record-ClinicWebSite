@@ -53,7 +53,9 @@
         <a href="/members/vets" class="list-group-item list-group-item-action ps-5 <%= ['vets','vet-form'].includes(activePage) ? 'active' : '' %>"><i class="fa-solid fa-user-doctor me-1"></i> Vet</a>
       </div>
     <% } %>
-    <a href="/settings" class="list-group-item list-group-item-action <%= activePage === 'settings' ? 'active' : '' %>"><i class="fa-solid fa-gear me-1"></i> Settings</a>
+    <a href="/settings" class="list-group-item list-group-item-action <%= activePage === 'settings' ? 'active' : '' %>">
+  <i class="fa-solid fa-gear me-1"></i> Settings
+</a>
     <a href="/logout" class="list-group-item list-group-item-action text-danger"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
   </div>
 </aside>
