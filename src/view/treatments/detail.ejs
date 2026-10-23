@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treatment Record - WebClinic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    .pet-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 14px; background: #eaf3fb; color: #3978a8; font-size: 25px; }
+    .info-label { color: #6c757d; font-size: .875rem; margin-bottom: 5px; }
+    .info-value { font-weight: 600; overflow-wrap: anywhere; }
+    .record-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .form-control[readonly] { background-color: #f8f9fa; }
+  </style>
+</head>
+<body class="bg-light">
+  <%- include('../partial/navbar') %>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('../partial/menu') %>
+      <main class="col-md-9 col-lg-10 p-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+          <div>
+            <a href="/treatments" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>กลับไปหน้า Treatment</a>
+            <h2 class="fw-bold mt-2 mb-1"><i class="fa-solid fa-file-medical text-primary me-2"></i>Treatment Record</h2>
+            <p class="text-muted mb-0">บันทึกและตรวจสอบข้อมูลการรักษา</p>
+          </div>
+          <% if (role === 'clinic' || record?.status === 'Finish' || record?.status === 'Completed') { %>
+            <span class="badge text-bg-secondary"><i class="fa-solid fa-eye me-1"></i>Read Only</span>
+          <% } else if (role === 'vet' && record?.status === 'Ready') { %>
+            <span class="badge text-bg-primary"><i class="fa-solid fa-pen-to-square me-1"></i>Editable</span>
+          <% } %>
+        </div>
+        <% if (locals.error) { %>
+          <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-2"></i><%= error %></div>
+        <% } %>
+        <% if (locals.success || (typeof querySaved !== 'undefined' && querySaved)) { %>
+          <div class="alert alert-success"><i class="fa-solid fa-check-circle me-2"></i>บันทึกข้อมูลเรียบร้อยแล้ว</div>
+        <% } %>
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <div class="pet-icon"><i class="fa-solid fa-paw"></i></div>
+              <div>
+                <h5 class="fw-bold mb-1"><%= pet.name || pet.pet_name || '-' %></h5>
+                <div class="text-muted small">Appointment #<%= appointment.appointment_id %> · <%= pet.species || pet.animal_type || '-' %></div>
+              </div>
+              <div class="ms-auto">
+                <% if (appointment.status === 'completed') { %>
+                  <span class="badge text-bg-success">Completed</span>
+                <% } else if (appointment.status === 'confirmed') { %>
+                  <span class="badge text-bg-primary">Confirmed</span>
+                <% } else if (appointment.status === 'cancelled') { %>
+                  <span class="badge text-bg-danger">Cancelled</span>
+                <% } else { %>
+                  <span class="badge text-bg-warning"><%= appointment.status || 'Pending' %></span>
+                <% } %>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="info-label">เจ้าของสัตว์</div>
+                <div class="info-value"><%= [owner?.first_name, owner?.last_name].filter(Boolean).join(' ') || '-' %></div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-label">สัตวแพทย์</div>
+                <div class="info-value"><%= [vetData?.first_name, vetData?.last_name].filter(Boolean).join(' ') || '-' %></div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-label">วันที่นัดหมาย</div>
+                <div class="info-value"><%= appointment.appointment_date || '-' %></div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-label">เวลานัดหมาย</div>
+                <div class="info-value"><%= String(appointment.appointment_time || '').slice(0,5) || '-' %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="nav nav-tabs mb-4">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#recordTab" type="button">
+              <i class="fa-solid fa-notes-medical me-1"></i>Treatment Record
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#historyTab" type="button">
+              <i class="fa-solid fa-clock-rotate-left me-1"></i>Treatment History
+            </button>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="recordTab">
+            <% if (!record) { %>
+              <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                  <i class="fa-solid fa-folder-open text-muted fs-1 mb-3"></i>
+                  <h5 class="fw-bold">ยังไม่มี Visit Record</h5>
+                  <p class="text-muted mb-0">ไม่พบข้อมูลการรักษาสำหรับ Appointment นี้</p>
+                </div>
+              </div>
+            <% } else { %>
+              <% const editable = role === 'vet' && record.status === 'Ready'; %>
+              <form action="/treatments/<%= appointment.appointment_id %>/save" method="POST" id="treatmentForm">
+                <div class="card border-0 shadow-sm mb-4">
+                  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0 fw-bold">ข้อมูลการเข้ารับการรักษา</h5>
+                    <% if (record.status === 'Ready') { %>
+                      <span class="badge text-bg-primary">Ready</span>
+                    <% } else if (record.status === 'Finish') { %>
+                      <span class="badge text-bg-success">Finish</span>
+                    <% } else { %>
+                      <span class="badge text-bg-secondary"><%= record.status %></span>
+                    <% } %>
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-3 mb-4">
+                      <div class="col-md-4">
+                        <div class="info-label">น้ำหนัก (กก.)</div>
+                        <div class="info-value"><%= record.weight ?? pet.weight ?? '-' %></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="info-label">เวลาเข้า</div>
+                        <div class="info-value"><%= record.visit_date || '-' %> <%= String(record.visit_time || '').slice(0,8) %></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="info-label">สถานะ Visit Record</div>
+                        <div class="info-value"><%= record.status %></div>
+                      </div>
+                    </div>
+                    <% if (!editable) { %>
+                      <div class="alert alert-secondary">
+                        <i class="fa-solid fa-lock me-2"></i>
+                        Visit Record นี้เป็นโหมดดูอย่างเดียว ไม่สามารถแก้ไขข้อมูลได้
+                      </div>
+                    <% } %>
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Symptoms <span class="text-muted fw-normal">(อาการ)</span></label>
+                      <textarea name="symptoms" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.symptoms || '' %></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Diagnosis <span class="text-muted fw-normal">(การวินิจฉัย)</span></label>
+                      <textarea name="diagnosis" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.diagnosis || '' %></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Treatment <span class="text-muted fw-normal">(การรักษา)</span></label>
+                      <textarea name="treatment" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.treatment || '' %></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Note</label>
+                      <textarea name="note" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.note || '' %></textarea>
+                      <% if (editable) { %>
+                        <div class="form-text">ตรวจสอบข้อมูลให้เรียบร้อยก่อนบันทึก การบันทึกจะเปลี่ยนสถานะเป็น Finish และไม่สามารถแก้ไขได้อีก</div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+                <% if (editable) { %>
+                  <div class="d-flex justify-content-end gap-2 mb-4">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('ยืนยันบันทึกและจบการรักษา? หลังบันทึกจะไม่สามารถแก้ไข Visit Record ได้อีก')">
+                      <i class="fa-solid fa-check me-1"></i>บันทึกและจบการรักษา
+                    </button>
+                  </div>
+                <% } %>
+              </form>
+            <% } %>
+          </div>
+          <div class="tab-pane fade" id="historyTab">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0">ประวัติการรักษาของ <%= pet.name || pet.pet_name || 'สัตว์ตัวนี้' %></h5>
+              </div>
+              <div class="card-body">
+                <% if (!petHistory || !petHistory.length) { %>
+                  <div class="text-center text-muted py-5">
+                    <i class="fa-solid fa-folder-open fs-1 mb-3"></i>
+                    <p>ยังไม่มีประวัติการรักษา</p>
+                  </div>
+                <% } else { %>
+                  <div class="accordion" id="historyAccordion">
+                    <% petHistory.forEach((h, i) => { %>
+                      <div class="accordion-item">
+                        <h2 class="accordion-header">
+                          <button class="accordion-button <%= i === 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#history<%= i %>">
+                            <span class="me-3">
+                              <i class="fa-solid fa-calendar-day text-primary me-2"></i>
+                              <%= h.visit_date || '-' %> <%= String(h.visit_time || '').slice(0,5) %>
+                            </span>
+                            <span class="badge <%= h.status === 'Finish' || h.status === 'Completed' ? 'text-bg-success' : 'text-bg-primary' %>"><%= h.status || 'Ready' %></span>
+                          </button>
+                        </h2>
+                        <div id="history<%= i %>" class="accordion-collapse collapse <%= i === 0 ? 'show' : '' %>" data-bs-parent="#historyAccordion">
+                          <div class="accordion-body">
+                            <div class="row g-3">
+                              <div class="col-md-6">
+                                <div class="info-label">น้ำหนัก (กก.)</div>
+                                <div><%= h.weight ?? '-' %></div>
+                              </div>
+                              <div class="col-md-6">
+                                <div class="info-label">Appointment</div>
+                                <div>#<%= h.appointment_id %></div>
+                              </div>
+                              <% [['Symptoms', h.symptoms], ['Diagnosis', h.diagnosis], ['Treatment', h.treatment], ['Note', h.note]].forEach(([label, value]) => { %>
+                                <div class="col-12">
+                                  <div class="info-label"><%= label %></div>
+                                  <div class="record-text"><%= value || '-' %></div>
+                                </div>
+                              <% }) %>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

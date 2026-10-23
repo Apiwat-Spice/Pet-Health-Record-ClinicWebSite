@@ -14,7 +14,7 @@ const ipdRoutes = require('./src/routes/ipdRoutes');
 const stockRoutes = require('./src/routes/stockRoutes');
 const receiptRoutes = require('./src/routes/receiptRoutes');
 const settingRoutes = require('./src/routes/settingRoutes');
-
+const treatmentRoutes = require('./src/routes/treatmentRoutes');
 const requireActiveAccount = require('./src/middleware/requireActiveAccount');
 
 const app = express();
@@ -59,6 +59,7 @@ app.use('/ipd', requireActiveAccount, ipdRoutes);
 app.use('/stock', requireActiveAccount, stockRoutes);
 app.use('/receipt', requireActiveAccount, receiptRoutes);
 app.use('/settings', requireActiveAccount, settingRoutes);
+app.use('/treatments', treatmentRoutes);
 
 // Logout
 app.get('/logout', (req, res) => {

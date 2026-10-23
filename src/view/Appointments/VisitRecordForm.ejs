@@ -86,10 +86,10 @@
 
         <div class="card form-card p-3 p-md-4">
           <h5 class="section-title mb-2"><i class="fa-solid fa-stethoscope me-2"></i>ข้อมูลการเข้ารับบริการ</h5>
-          <p class="required-note mb-4">
-            <i class="fa-solid fa-circle-info me-1"></i>
-            กรุณากรอกข้อมูลทุกช่องที่มีเครื่องหมาย <span class="text-danger">*</span> ให้ครบก่อนบันทึก
-          </p>
+<p class="required-note mb-4">
+  <i class="fa-solid fa-circle-info me-1"></i>
+  กรุณากรอกข้อมูลน้ำหนักสัตว์เลี้ยง ซึ่งเป็นข้อมูลที่จำเป็นต้องระบุก่อนบันทึก
+</p>
 
           <form id="visitRecordForm" action="/visit-records/save/<%= appointment.appointment_id %>" method="POST" novalidate>
             <div class="row g-3">
@@ -117,25 +117,25 @@
 
               <div class="col-12">
                 <label for="symptoms" class="form-label">Symptoms / อาการ <span class="text-danger">*</span></label>
-                <textarea id="symptoms" name="symptoms" class="form-control" rows="3" placeholder="ระบุอาการที่พบ" required><%= visitRecord?.symptoms || '' %></textarea>
+                <textarea id="symptoms" name="symptoms" class="form-control" rows="3" placeholder="ระบุอาการที่พบ" ><%= visitRecord?.symptoms || '' %></textarea>
                 <div class="invalid-feedback">กรุณาระบุอาการของสัตว์เลี้ยง</div>
               </div>
 
               <div class="col-12">
                 <label for="diagnosis" class="form-label">Diagnosis / การวินิจฉัย <span class="text-danger">*</span></label>
-                <textarea id="diagnosis" name="diagnosis" class="form-control" rows="3" placeholder="ระบุผลการวินิจฉัย" required><%= visitRecord?.diagnosis || '' %></textarea>
+                <textarea id="diagnosis" name="diagnosis" class="form-control" rows="3" placeholder="ระบุผลการวินิจฉัย" ><%= visitRecord?.diagnosis || '' %></textarea>
                 <div class="invalid-feedback">กรุณาระบุผลการวินิจฉัย</div>
               </div>
 
               <div class="col-12">
                 <label for="treatment" class="form-label">Treatment / การรักษา <span class="text-danger">*</span></label>
-                <textarea id="treatment" name="treatment" class="form-control" rows="3" placeholder="ระบุวิธีการรักษา" required><%= visitRecord?.treatment || '' %></textarea>
+                <textarea id="treatment" name="treatment" class="form-control" rows="3" placeholder="ระบุวิธีการรักษา" ><%= visitRecord?.treatment || '' %></textarea>
                 <div class="invalid-feedback">กรุณาระบุวิธีการรักษา</div>
               </div>
 
               <div class="col-12">
                 <label for="note" class="form-label">Note / หมายเหตุ <span class="text-danger">*</span></label>
-                <textarea id="note" name="note" class="form-control" rows="3" placeholder="คำแนะนำหรือรายละเอียดเพิ่มเติม หากไม่มีให้ระบุว่า ไม่มี" required><%= visitRecord?.note || '' %></textarea>
+                <textarea id="note" name="note" class="form-control" rows="3" placeholder="คำแนะนำหรือรายละเอียดเพิ่มเติม หากไม่มีให้ระบุว่า ไม่มี" ><%= visitRecord?.note || '' %></textarea>
                 <div class="invalid-feedback">กรุณาระบุหมายเหตุ หรือพิมพ์ว่า ไม่มี</div>
               </div>
             </div>
@@ -153,129 +153,109 @@
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('visitRecordForm');
-      const message = document.getElementById('formMessage');
-      const saveButton = document.getElementById('saveButton');
-      const fields = [...form.querySelectorAll('[required]')];
-      const originalButtonHtml = saveButton.innerHTML;
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('visitRecordForm');
+  const message = document.getElementById('formMessage');
+  const saveButton = document.getElementById('saveButton');
+  const weight = document.getElementById('weight');
+  const originalButtonHtml = saveButton.innerHTML;
 
-      function showMessage(text, success = false) {
-        message.replaceChildren();
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${success ? 'success' : 'danger'}`;
-        alert.setAttribute('role', 'alert');
-        alert.textContent = text;
-        message.appendChild(alert);
-        message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  function showMessage(text, success = false) {
+    message.replaceChildren();
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${success ? 'success' : 'danger'}`;
+    alert.setAttribute('role', 'alert');
+    alert.textContent = text;
+    message.appendChild(alert);
+    message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  weight.addEventListener('input', () => {
+    weight.classList.remove('is-invalid');
+    weight.setCustomValidity('');
+  });
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const value = weight.value.trim();
+    const number = Number(value);
+    const invalidWeight = value === '' ||
+      !Number.isFinite(number) ||
+      number <= 0 ||
+      number > 999999.99 ||
+      Math.round(number * 100) !== number * 100;
+
+    weight.classList.toggle('is-invalid', invalidWeight);
+
+    if (invalidWeight) {
+      showMessage('กรุณาระบุน้ำหนักมากกว่า 0 และไม่เกิน 999999.99 kg โดยระบุทศนิยมได้ไม่เกิน 2 ตำแหน่ง');
+      weight.focus();
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
+
+    try {
+      const formData = new URLSearchParams();
+      new FormData(form).forEach((value, key) => {
+        formData.append(key, String(value));
+      });
+
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData.toString(),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+
+      if (!contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Unexpected server response:', responseText);
+        throw new Error(`เซิร์ฟเวอร์ตอบกลับในรูปแบบที่ไม่คาดหมาย (HTTP ${response.status})`);
       }
 
-      fields.forEach(field => {
-        field.addEventListener('input', () => {
-          field.classList.remove('is-invalid');
-          field.setCustomValidity('');
-        });
-        field.addEventListener('change', () => {
-          field.classList.remove('is-invalid');
-        });
-      });
+      const result = await response.json();
 
-      form.addEventListener('submit', async event => {
-        event.preventDefault();
+      if (!response.ok || !result.success) {
+        showMessage(result.message || 'บันทึกข้อมูลไม่สำเร็จ');
+        return;
+      }
 
-        let firstInvalid = null;
+      showMessage(result.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', true);
 
-        fields.forEach(field => {
-          const empty = !String(field.value || '').trim();
-          const invalidWeight = field.name === 'weight' &&
-            (empty || !Number.isFinite(Number(field.value)) ||
-             Number(field.value) <= 0 || Number(field.value) > 999999.99);
-          const invalid = empty || invalidWeight || !field.checkValidity();
-
-          field.classList.toggle('is-invalid', invalid);
-
-          if (invalid && !firstInvalid) {
-            firstInvalid = field;
+      if (result.visitRecord) {
+        Object.entries(result.visitRecord).forEach(([key, value]) => {
+          const field = form.elements.namedItem(key);
+          if (field && value != null) {
+            field.value = key === 'visit_time' ? String(value).slice(0, 5) : value;
           }
         });
+      }
 
-        if (firstInvalid) {
-          showMessage('กรุณากรอกข้อมูลการเข้ารับบริการให้ครบทุกช่องและตรวจสอบค่าที่ระบุ');
-          firstInvalid.focus();
-          return;
-        }
+      saveButton.innerHTML = '<i class="fa-solid fa-check me-1"></i>บันทึกแล้ว';
 
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
-
-        try {
-          const formData = new URLSearchParams();
-
-          new FormData(form).forEach((value, key) => {
-            formData.append(key, String(value));
-          });
-
-          console.log('Form action:', form.action);
-          console.log('Form method:', 'POST');
-          console.log('Form data:', Object.fromEntries(formData.entries()));
-
-          const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData.toString(),
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-
-          const contentType = response.headers.get('content-type') || '';
-          let result;
-
-          if (contentType.includes('application/json')) {
-            result = await response.json();
-          } else {
-            const responseText = await response.text();
-            console.error('Unexpected server response:', responseText);
-            throw new Error(`เซิร์ฟเวอร์ตอบกลับในรูปแบบที่ไม่คาดหมาย (HTTP ${response.status})`);
-          }
-
-          console.log('Response status:', response.status);
-          console.log('Response body:', result);
-
-          if (!response.ok || !result.success) {
-            showMessage(result.message || 'บันทึกข้อมูลไม่สำเร็จ กรุณาตรวจสอบข้อมูล');
-            return;
-          }
-
-          showMessage(result.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', true);
-
-          if (result.visitRecord) {
-            Object.entries(result.visitRecord).forEach(([key, value]) => {
-              const field = form.elements.namedItem(key);
-              if (field && value != null) {
-                field.value = key === 'visit_time' ? String(value).slice(0, 5) : value;
-              }
-            });
-          }
-
-          saveButton.innerHTML = '<i class="fa-solid fa-check me-1"></i>บันทึกแล้ว';
-
-          const url = new URL(window.location.href);
-          url.searchParams.set('success', result.message || 'บันทึกข้อมูลเรียบร้อยแล้ว');
-          window.history.replaceState({}, '', url);
-        } catch (error) {
-          console.error('Visit record submission error:', error);
-          showMessage(error.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
-        } finally {
-          saveButton.disabled = false;
-          if (saveButton.textContent.includes('กำลังบันทึก')) {
-            saveButton.innerHTML = originalButtonHtml;
-          }
-        }
-      });
-    });
-  </script>
+      const url = new URL(window.location.href);
+      url.searchParams.set('success', result.message || 'บันทึกข้อมูลเรียบร้อยแล้ว');
+      window.history.replaceState({}, '', url);
+    } catch (error) {
+      console.error('Visit record submission error:', error);
+      showMessage(error.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      saveButton.disabled = false;
+      if (saveButton.textContent.includes('กำลังบันทึก')) {
+        saveButton.innerHTML = originalButtonHtml;
+      }
+    }
+  });
+});
+</script>
 </body>
 </html>

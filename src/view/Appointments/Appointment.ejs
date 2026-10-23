@@ -203,7 +203,13 @@
               </div>
               <div class="col-12">
                 <label for="createTitle" class="form-label">หัวข้อนัดหมาย</label>
-                <input type="text" name="title" id="createTitle" class="form-control" maxlength="255" placeholder="เช่น ตรวจสุขภาพ ฉีดวัคซีน">
+                <select name="title" class="form-select" required>
+  <option value="Health Checkup">Health Checkup</option>
+  <option value="Vaccination">Vaccination</option>
+  <option value="Sick Visit / Consultation">Sick Visit / Consultation</option>
+  <option value="Spay / Neuter">Spay / Neuter</option>
+  <option value="Grooming / Boarding">Grooming / Boarding</option>
+</select>
               </div>
               <div class="col-12">
                 <label for="createDetail" class="form-label">รายละเอียด</label>

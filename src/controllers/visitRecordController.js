@@ -49,7 +49,8 @@ exports.showVisitRecords = async (req, res) => {
           symptoms,
           diagnosis,
           treatment,
-          note
+          note,
+          status
         )
       `,
       )
@@ -181,13 +182,9 @@ exports.saveVisitRecord = async (req, res) => {
     if (
       !visit_date ||
       !visit_time ||
-      !weight ||
-      !symptoms ||
-      !diagnosis ||
-      !treatment ||
-      !note
+      !weight 
     ) {
-      return sendError(req, res, 400, 'กรุณากรอกข้อมูลให้ครบทุกช่อง');
+      return sendError(req, res, 400, 'กรุณากรอกข้อมูล น้ำหนัก วันที่ และเวลาเข้าตรวจให้ครบถ้วน');
     }
 
     if (!isValidDate(visit_date) || !isValidTime(visit_time)) {
@@ -257,7 +254,8 @@ exports.saveVisitRecord = async (req, res) => {
       symptoms,
       diagnosis,
       treatment,
-      note
+      note,
+      status: 'Ready' 
     };
 
     console.log('[VisitRecord] Saving to Supabase');

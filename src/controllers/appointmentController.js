@@ -371,6 +371,20 @@ exports.createAppointment = async (req, res) => {
       );
     }
 
+    const allowedTitles = [
+      'Health Checkup',
+      'Vaccination',
+      'Sick Visit / Consultation',
+      'Spay / Neuter',
+      'Grooming / Boarding',
+    ];
+
+    const appointmentTitle = String(title || '').trim();
+
+    if (!allowedTitles.includes(appointmentTitle)) {
+      return res.status(400).send('Invalid appointment title');
+    }
+
     const clinicStaffId = await getClinicStaffId(user);
 
     const { error: insertError } = await supabase.from('appointments').insert({
@@ -380,7 +394,7 @@ exports.createAppointment = async (req, res) => {
       appointment_date: dateTime.appointment_date,
       appointment_time: dateTime.appointment_time,
       type: type || 'Appointment',
-      title: String(title || '').trim() || null,
+      title: appointmentTitle,
       detail: String(detail || '').trim() || null,
       status: 'confirmed',
     });

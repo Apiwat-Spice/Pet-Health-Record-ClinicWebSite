@@ -30,7 +30,8 @@ function getAppointment(visit) {
 async function getReceiptPageData(selectedVisitId) {
   const { data: visitRows, error: visitError } = await supabase
     .from('visit_records')
-    .select(`
+    .select(
+      `
       visit_id,
       appointment_id,
       visit_date,
@@ -49,14 +50,17 @@ async function getReceiptPageData(selectedVisitId) {
         title,
         type
       )
-    `)
+    `,
+    )
     .eq('appointments.status', 'completed')
     .order('visit_date', { ascending: false });
 
   if (visitError) throw visitError;
 
   const rawVisits = visitRows || [];
-  const petIds = [...new Set(rawVisits.map(v => getAppointment(v).pet_id).filter(Boolean))];
+  const petIds = [
+    ...new Set(rawVisits.map((v) => getAppointment(v).pet_id).filter(Boolean)),
+  ];
 
   let pets = [];
   if (petIds.length) {
@@ -68,18 +72,18 @@ async function getReceiptPageData(selectedVisitId) {
     pets = data || [];
   }
 
-  const petMap = new Map(pets.map(p => [String(p.pet_id), p]));
-  const visits = rawVisits.map(v => {
+  const petMap = new Map(pets.map((p) => [String(p.pet_id), p]));
+  const visits = rawVisits.map((v) => {
     const appointment = getAppointment(v);
     const pet = petMap.get(String(appointment.pet_id));
     return {
       ...v,
       appointment,
-      pet_name: pet?.pet_name || '-'
+      pet_name: pet?.pet_name || '-',
     };
   });
 
-  const visitIds = visits.map(v => v.visit_id);
+  const visitIds = visits.map((v) => v.visit_id);
   let transactions = [];
 
   if (visitIds.length) {
@@ -91,7 +95,7 @@ async function getReceiptPageData(selectedVisitId) {
     transactions = data || [];
   }
 
-  const transactionIds = transactions.map(t => t.transaction_id);
+  const transactionIds = transactions.map((t) => t.transaction_id);
   let receipts = [];
   let items = [];
 
@@ -99,12 +103,16 @@ async function getReceiptPageData(selectedVisitId) {
     const [receiptResult, itemResult] = await Promise.all([
       supabase
         .from('receipts')
-        .select('receipt_id, transaction_id, payment_status, created_at, updated_at')
+        .select(
+          'receipt_id, transaction_id, payment_status, created_at, updated_at',
+        )
         .in('transaction_id', transactionIds),
       supabase
         .from('transaction_items')
-        .select('transaction_item_id, transaction_id, stock_id, quantity, unit_price, subtotal')
-        .in('transaction_id', transactionIds)
+        .select(
+          'transaction_item_id, transaction_id, stock_id, quantity, unit_price, subtotal',
+        )
+        .in('transaction_id', transactionIds),
     ]);
 
     if (receiptResult.error) throw receiptResult.error;
@@ -114,20 +122,26 @@ async function getReceiptPageData(selectedVisitId) {
     items = itemResult.data || [];
   }
 
-  const stockIds = [...new Set(items.map(i => i.stock_id))];
+  const stockIds = [...new Set(items.map((i) => i.stock_id))];
   let stockRows = [];
 
   const { data: allStocks, error: stockError } = await supabase
     .from('stock')
-    .select('stock_id, name, category, quantity, price, type_unit, expires_status, expires_at')
+    .select(
+      'stock_id, name, category, quantity, price, type_unit, expires_status, expires_at',
+    )
     .order('name', { ascending: true });
 
   if (stockError) throw stockError;
   stockRows = allStocks || [];
 
-  const stockMap = new Map(stockRows.map(s => [String(s.stock_id), s]));
-  const transactionMap = new Map(transactions.map(t => [String(t.visit_id), t]));
-  const receiptMap = new Map(receipts.map(r => [String(r.transaction_id), r]));
+  const stockMap = new Map(stockRows.map((s) => [String(s.stock_id), s]));
+  const transactionMap = new Map(
+    transactions.map((t) => [String(t.visit_id), t]),
+  );
+  const receiptMap = new Map(
+    receipts.map((r) => [String(r.transaction_id), r]),
+  );
 
   const itemMap = new Map();
   for (const item of items) {
@@ -136,17 +150,20 @@ async function getReceiptPageData(selectedVisitId) {
     itemMap.get(key).push({
       ...item,
       stock_name: stockMap.get(String(item.stock_id))?.name || 'ไม่พบสินค้า',
-      type_unit: stockMap.get(String(item.stock_id))?.type_unit || ''
+      type_unit: stockMap.get(String(item.stock_id))?.type_unit || '',
     });
   }
 
-  const enrichedVisits = visits.map(v => {
-    const transaction = transactionMap.get(String(
-      transactions.find(t => String(t.visit_id) === String(v.visit_id))?.visit_id
-    ));
-    const actualTransaction = transactions.find(
-      t => String(t.visit_id) === String(v.visit_id)
-    ) || null;
+  const enrichedVisits = visits.map((v) => {
+    const transaction = transactionMap.get(
+      String(
+        transactions.find((t) => String(t.visit_id) === String(v.visit_id))
+          ?.visit_id,
+      ),
+    );
+    const actualTransaction =
+      transactions.find((t) => String(t.visit_id) === String(v.visit_id)) ||
+      null;
     const receipt = actualTransaction
       ? receiptMap.get(String(actualTransaction.transaction_id)) || null
       : null;
@@ -154,39 +171,42 @@ async function getReceiptPageData(selectedVisitId) {
     return {
       ...v,
       transaction: actualTransaction,
-      receipt
+      receipt,
     };
   });
 
   const selectedId = selectedVisitId
     ? String(selectedVisitId)
     : String(
-        enrichedVisits.find(v => !v.transaction)?.visit_id ||
-        enrichedVisits[0]?.visit_id ||
-        ''
+        enrichedVisits.find((v) => !v.transaction)?.visit_id ||
+          enrichedVisits[0]?.visit_id ||
+          '',
       );
 
-  const selectedVisit = enrichedVisits.find(v => String(v.visit_id) === selectedId) || null;
+  const selectedVisit =
+    enrichedVisits.find((v) => String(v.visit_id) === selectedId) || null;
   const selectedTransaction = selectedVisit?.transaction || null;
   const selectedItems = selectedTransaction
     ? itemMap.get(String(selectedTransaction.transaction_id)) || []
     : [];
 
-  const receiptList = receipts.map(receipt => {
-    const transaction = transactions.find(
-      t => String(t.transaction_id) === String(receipt.transaction_id)
-    );
-    const visit = enrichedVisits.find(
-      v => String(v.visit_id) === String(transaction?.visit_id)
-    );
+  const receiptList = receipts
+    .map((receipt) => {
+      const transaction = transactions.find(
+        (t) => String(t.transaction_id) === String(receipt.transaction_id),
+      );
+      const visit = enrichedVisits.find(
+        (v) => String(v.visit_id) === String(transaction?.visit_id),
+      );
 
-    return {
-      ...receipt,
-      transaction,
-      visit,
-      items: itemMap.get(String(receipt.transaction_id)) || []
-    };
-  }).filter(r => r.transaction && r.visit)
+      return {
+        ...receipt,
+        transaction,
+        visit,
+        items: itemMap.get(String(receipt.transaction_id)) || [],
+      };
+    })
+    .filter((r) => r.transaction && r.visit)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   return {
@@ -196,7 +216,7 @@ async function getReceiptPageData(selectedVisitId) {
     selectedVisit,
     selectedVisitId: selectedId,
     selectedTransaction,
-    selectedItems
+    selectedItems,
   };
 }
 
@@ -216,11 +236,13 @@ async function getReceipt(req, res) {
       activePage: 'receipt',
       success,
       error,
-      ...data
+      ...data,
     });
   } catch (error) {
     console.error('Load receipt error:', error);
-    return res.status(500).send('ไม่สามารถโหลดหน้า Receipt ได้: ' + error.message);
+    return res
+      .status(500)
+      .send('ไม่สามารถโหลดหน้า Receipt ได้: ' + error.message);
   }
 }
 
@@ -246,35 +268,61 @@ async function saveReceipt(req, res) {
       throw new Error('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ');
     }
 
-    const normalizedItems = items.map(item => ({
+    const normalizedItems = items.map((item) => ({
       stock_id: Number(item.stock_id),
       quantity: Number(item.quantity),
-      unit_price: Number(item.unit_price)
+      unit_price: Number(item.unit_price),
     }));
 
-    if (normalizedItems.some(item =>
-      !Number.isSafeInteger(item.stock_id) || item.stock_id <= 0 ||
-      !Number.isSafeInteger(item.quantity) || item.quantity <= 0 ||
-      !Number.isFinite(item.unit_price) || item.unit_price < 0 ||
-      Math.round(item.unit_price * 100) !== item.unit_price * 100
-    )) {
+    if (
+      normalizedItems.some(
+        (item) =>
+          !Number.isSafeInteger(item.stock_id) ||
+          item.stock_id <= 0 ||
+          !Number.isSafeInteger(item.quantity) ||
+          item.quantity <= 0 ||
+          !Number.isFinite(item.unit_price) ||
+          item.unit_price < 0 ||
+          Math.round(item.unit_price * 100) !== item.unit_price * 100,
+      )
+    ) {
       throw new Error('กรุณาตรวจสอบสินค้า จำนวน และราคาต่อหน่วย');
     }
 
-    if (new Set(normalizedItems.map(item => item.stock_id)).size !== normalizedItems.length) {
+    if (
+      new Set(normalizedItems.map((item) => item.stock_id)).size !==
+      normalizedItems.length
+    ) {
       throw new Error('ไม่สามารถเลือกสินค้าชนิดเดียวกันซ้ำหลายแถวได้');
     }
 
     const { error } = await supabase.rpc('save_receipt_atomic', {
       p_visit_id: Number(visitId),
       p_items: normalizedItems,
-      p_clinic_staff_id: clinicStaffId
+      p_clinic_staff_id: clinicStaffId,
     });
 
     if (error) throw error;
 
+    // เปลี่ยน Visit Record เป็น Completed หลังสร้าง Receipt สำเร็จ
+    const { data: updatedVisit, error: statusError } = await supabase
+      .from('visit_records')
+      .update({ status: 'Completed' })
+      .eq('visit_id', Number(visitId))
+      .eq('status', 'Finish')
+      .select('visit_id');
+
+    if (statusError) throw statusError;
+
+    if (!updatedVisit || updatedVisit.length === 0) {
+      throw new Error(
+        'สร้าง Receipt สำเร็จ แต่เปลี่ยนสถานะ Visit Record ไม่สำเร็จ กรุณาตรวจสอบสถานะ',
+      );
+    }
+
     if (req.session) {
-      req.session.receiptSuccess = 'บันทึก Receipt และปรับปรุงคลังสินค้าเรียบร้อยแล้ว';
+      req.session.receiptSuccess =
+        'บันทึก Receipt และปรับปรุงคลังสินค้าเรียบร้อยแล้ว';
     }
     return res.redirect('/receipt?visit_id=' + encodeURIComponent(visitId));
   } catch (error) {
@@ -282,7 +330,9 @@ async function saveReceipt(req, res) {
     if (req.session) {
       req.session.receiptError = error.message || 'ไม่สามารถบันทึก Receipt ได้';
     }
-    return res.redirect('/receipt' + (visitId ? '?visit_id=' + encodeURIComponent(visitId) : ''));
+    return res.redirect(
+      '/receipt' + (visitId ? '?visit_id=' + encodeURIComponent(visitId) : ''),
+    );
   }
 }
 
@@ -307,21 +357,23 @@ async function updatePaymentStatus(req, res) {
 
     const { error } = await supabase.rpc('update_receipt_payment_atomic', {
       p_receipt_id: receiptId,
-      p_payment_status: paymentStatus
+      p_payment_status: paymentStatus,
     });
 
     if (error) throw error;
 
     if (req.session) {
-      req.session.receiptSuccess = paymentStatus === 'paid'
-        ? 'เปลี่ยนสถานะเป็นจ่ายแล้วเรียบร้อย'
-        : 'เปลี่ยนสถานะเป็นยังไม่จ่ายเรียบร้อย';
+      req.session.receiptSuccess =
+        paymentStatus === 'paid'
+          ? 'เปลี่ยนสถานะเป็นจ่ายแล้วเรียบร้อย'
+          : 'เปลี่ยนสถานะเป็นยังไม่จ่ายเรียบร้อย';
     }
 
     return res.redirect('/receipt');
   } catch (error) {
     console.error('Update receipt payment error:', error);
-    if (req.session) req.session.receiptError = error.message || 'เปลี่ยนสถานะไม่สำเร็จ';
+    if (req.session)
+      req.session.receiptError = error.message || 'เปลี่ยนสถานะไม่สำเร็จ';
     return res.redirect('/receipt');
   }
 }
@@ -330,5 +382,5 @@ module.exports = {
   requireRole,
   getReceipt,
   saveReceipt,
-  updatePaymentStatus
+  updatePaymentStatus,
 };
