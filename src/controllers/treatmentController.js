@@ -90,7 +90,7 @@ async function getPageData(req, vetFilter = '') {
     return {
       ...a,
       pet,
-      pet_name: pet.name || '-',
+      pet_name: pet.pet_name  || '-',
       owner_name:
         [owner.first_name, owner.last_name].filter(Boolean).join(' ') || '-',
       vet_name:
@@ -100,7 +100,14 @@ async function getPageData(req, vetFilter = '') {
       visit_record: recordMap.get(String(a.appointment_id)) || null,
     };
   });
-
+  console.log(
+    'Appointment pet_id:',
+    (appointments || []).map((a) => ({
+      appointment_id: a.appointment_id,
+      pet_id: a.pet_id,
+    })),
+  );
+console.log('Pets data:', JSON.stringify(pets, null, 2));
   return { user, role, vet, vets: vets || [], appointments: rows };
 }
 
@@ -263,7 +270,9 @@ exports.save = async (req, res) => {
       return res.status(404).send('ไม่พบ Visit Record');
     }
     if (record.status !== 'Ready') {
-      return res.status(403).send('Visit Record นี้ดูได้อย่างเดียว ไม่สามารถแก้ไขได้');
+      return res
+        .status(403)
+        .send('Visit Record นี้ดูได้อย่างเดียว ไม่สามารถแก้ไขได้');
     }
     const { data: updated, error: updateError } = await supabase
       .from('visit_records')
@@ -272,7 +281,7 @@ exports.save = async (req, res) => {
         diagnosis: String(req.body.diagnosis || '').trim() || null,
         treatment: String(req.body.treatment || '').trim() || null,
         note: String(req.body.note || '').trim() || null,
-        status: 'Finish'
+        status: 'Finish',
       })
       .eq('visit_id', record.visit_id)
       .eq('status', 'Ready')
@@ -280,12 +289,16 @@ exports.save = async (req, res) => {
       .maybeSingle();
     if (updateError) throw updateError;
     if (!updated) {
-      return res.status(409).send('Visit Record ถูกบันทึกหรือปิดไปแล้ว กรุณาโหลดหน้าใหม่');
+      return res
+        .status(409)
+        .send('Visit Record ถูกบันทึกหรือปิดไปแล้ว กรุณาโหลดหน้าใหม่');
     }
     return res.redirect(`/treatments/${appointmentId}?saved=1`);
   } catch (error) {
     console.error('Treatment save error:', error);
-    return res.status(500).send(`บันทึกการรักษาไม่สำเร็จ: ${getMessage(error)}`);
+    return res
+      .status(500)
+      .send(`บันทึกการรักษาไม่สำเร็จ: ${getMessage(error)}`);
   }
 };
 

@@ -72,12 +72,13 @@
                   <% } %>
                   <% appointments.forEach(a => { %>
                     <tr>
+                      
                       <td class="text-nowrap">
                         <div><%= a.appointment_date %></div>
                         <small class="text-muted"><%= String(a.appointment_time || '').slice(0,5) %></small>
                       </td>
                       <td>
-                        <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name %></div>
+                        <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name || 0 %></div>
                         <small class="text-muted">#<%= a.appointment_id %></small>
                       </td>
                       <td><%= a.owner_name %></td>
