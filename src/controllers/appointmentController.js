@@ -588,3 +588,48 @@ exports.cancelAppointment = async (req, res) => {
     return res.status(500).send('ไม่สามารถยกเลิกนัดหมายได้');
   }
 };
+
+
+exports.getVetAppointmentsByDate = async (req, res) => {
+  if (!req.session?.user) {
+    return res.status(401).json({ message: 'กรุณาเข้าสู่ระบบ' });
+  }
+
+  const vetId = parsePositiveInteger(req.query.vet_id);
+  const date = req.query.appointment_date;
+
+  if (!vetId || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
+    return res.status(400).json({ message: 'ข้อมูลสัตวแพทย์หรือวันที่ไม่ถูกต้อง' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('appointment_time, status')
+      .eq('vet_id', vetId)
+      .eq('appointment_date', date)
+      .in('status', ['pending', 'confirmed', 'completed'])
+      .order('appointment_time', { ascending: true });
+
+    if (error) throw error;
+
+    const appointments = (data || []).map(a => ({
+      time: String(a.appointment_time).slice(0, 5),
+      status: a.status
+    }));
+
+    return res.json({
+      completed: appointments
+        .filter(a => a.status === 'completed')
+        .map(a => a.time),
+      booked: appointments
+        .filter(a => ['pending', 'confirmed'].includes(a.status))
+        .map(a => a.time)
+    });
+  } catch (error) {
+    console.error('getVetAppointmentsByDate error:', error);
+    return res.status(500).json({
+      message: 'ไม่สามารถโหลดตารางนัดสัตวแพทย์ได้'
+    });
+  }
+};

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,18 +7,52 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
-    .appointment-group table {
-      margin-bottom: 0;
-    }
+    /* Popup เพิ่มนัดหมาย */
+#createAppointmentModal .modal-dialog {
+  height: calc(100% - 1rem);
+  max-height: calc(100dvh - 1rem);
+  margin: 0.5rem auto;
+}
 
-    @media (max-width: 576px) {
-      main {
-        padding: 1rem !important;
-      }
-    }
+#createAppointmentModal .modal-content {
+  height: 100%;
+  max-height: calc(100dvh - 1rem);
+  overflow: hidden;
+}
+
+#createAppointmentModal #createAppointmentForm {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#createAppointmentModal .modal-header,
+#createAppointmentModal .modal-footer {
+  flex-shrink: 0;
+}
+
+#createAppointmentModal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 576px) {
+  #createAppointmentModal .modal-dialog {
+    height: calc(100% - 1rem);
+    margin: 0.5rem;
+  }
+
+  #createAppointmentModal .modal-content {
+    max-height: calc(100dvh - 1rem);
+  }
+}
   </style>
 </head>
-
 <body class="bg-light">
   <%- include('../partial/navbar') %>
   <div class="container-fluid">
@@ -32,23 +65,22 @@
         </div>
 
         <% if (locals.success) { %>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-          <i class="fa-solid fa-circle-check me-2"></i><%= success %>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
-        </div>
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+          </div>
         <% } %>
         <% if (locals.error) { %>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
-        </div>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+          </div>
         <% } %>
 
         <section>
           <div class="card border-0 shadow-sm">
             <div class="card-body">
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-
                 <div class="btn-group flex-wrap" role="group">
                   <button type="button" class="btn btn-primary status-toggle" data-status="confirmed">
                     <i class="fa-solid fa-calendar-check me-1"></i> Confirmed
@@ -64,7 +96,7 @@
                   </button>
                 </div>
 
-                <div class="d-flex flex-row  gap-3 align-items-start">
+                <div class="d-flex flex-row gap-3 align-items-start">
                   <div class="input-group" style="max-width: 320px;">
                     <span class="input-group-text bg-white">
                       <i class="fa-solid fa-magnifying-glass"></i>
@@ -77,80 +109,110 @@
                 </div>
               </div>
 
-<% ['confirmed', 'pending', 'cancelled'].forEach(group => { %>
-  <div class="appointment-group <%= group === 'confirmed' ? '' : 'd-none' %>" data-group="<%= group %>">
-    <% const filtered = appointments.filter(a => a.status === group); %>
-                <% if (filtered.length === 0) { %>
-                <div class="empty-state text-center text-muted py-5">
-                  <i class="fa-regular fa-calendar-xmark fa-3x mb-3"></i>
-                  <p class="mb-0">ไม่มีรายการนัดหมายในสถานะนี้</p>
+              <% ['confirmed', 'pending', 'cancelled'].forEach(group => { %>
+                <div class="appointment-group <%= group === 'confirmed' ? '' : 'd-none' %>" data-group="<%= group %>">
+                  <% const filtered = appointments.filter(a => a.status === group); %>
+                  <% if (filtered.length === 0) { %>
+                    <div class="empty-state text-center text-muted py-5">
+                      <i class="fa-regular fa-calendar-xmark fa-3x mb-3"></i>
+                      <p class="mb-0">ไม่มีรายการนัดหมายในสถานะนี้</p>
+                    </div>
+                  <% } else { %>
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                          <tr>
+                            <th>วันและเวลา</th>
+                            <th>สัตว์เลี้ยง</th>
+                            <th>หัวข้อ / ประเภท</th>
+                            <th>สัตวแพทย์</th>
+                            <th>สถานะ</th>
+                            <th>รายละเอียด</th>
+                            <th>จัดการ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% filtered.forEach(a => { %>
+                            <tr data-search="<%= [a.pet_name, a.owner_name, a.title, a.type, a.vet_name].join(' ').toLowerCase() %>">
+                              <td class="text-nowrap">
+                                <div class="fw-semibold"><%= a.appointment_date %></div>
+                                <small class="text-muted"><%= String(a.appointment_time || '').slice(0, 5) %></small>
+                              </td>
+                              <td>
+                                <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name || '-' %></div>
+                                <small class="text-muted"><%= a.owner_name || '-' %></small>
+                              </td>
+                              <td>
+                                <div><%= a.title || '-' %></div>
+                                <small class="text-muted"><%= a.type || '-' %></small>
+                              </td>
+                              <td><%= a.vet_name || '-' %></td>
+                              <td>
+                                <% if (a.status === 'pending') { %>
+                                  <span class="badge text-bg-warning">Pending</span>
+                                <% } else if (a.status === 'confirmed') { %>
+                                  <span class="badge text-bg-success">Confirmed</span>
+                                <% } else if (a.status === 'cancelled') { %>
+                                  <span class="badge text-bg-danger">Cancelled</span>
+                                <% } else { %>
+                                  <span class="badge text-bg-secondary">Completed</span>
+                                <% } %>
+                              </td>
+                              <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary detail-button"
+                                  data-bs-toggle="modal" data-bs-target="#appointmentModal"
+                                  data-title="<%= a.title || 'Appointment' %>"
+                                  data-pet="<%= a.pet_name || '-' %>"
+                                  data-owner="<%= a.owner_name || '-' %>"
+                                  data-date="<%= a.appointment_date || '-' %>"
+                                  data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
+                                  data-type="<%= a.type || '-' %>"
+                                  data-vet="<%= a.vet_name || '-' %>"
+                                  data-status="<%= a.status %>"
+                                  data-detail="<%= a.detail || '-' %>"
+                                  data-status-detail="<%= a.status_detail || '-' %>">
+                                  <i class="fa-solid fa-eye"></i>
+                                </button>
+                              </td>
+                              <td class="text-nowrap">
+                                <% if (a.status === 'pending') { %>
+                                  <button type="button" class="btn btn-sm btn-outline-success confirm-button"
+                                    data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                    data-id="<%= a.appointment_id %>"
+                                    data-pet="<%= a.pet_name || '-' %>"
+                                    data-owner="<%= a.owner_name || '-' %>"
+                                    data-date="<%= a.appointment_date || '-' %>"
+                                    data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
+                                    data-title="<%= a.title || '-' %>"
+                                    data-type="<%= a.type || '-' %>"
+                                    data-detail="<%= a.detail || '-' %>">
+                                    <i class="fa-solid fa-calendar-check"></i>
+                                  </button>
+                                <% } else if (a.status === 'confirmed') { %>
+                                  <button type="button" class="btn btn-sm btn-outline-danger cancel-button"
+                                    data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                    data-id="<%= a.appointment_id %>"
+                                    data-pet="<%= a.pet_name || '-' %>"
+                                    data-owner="<%= a.owner_name || '-' %>"
+                                    data-date="<%= a.appointment_date || '-' %>"
+                                    data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
+                                    data-title="<%= a.title || '-' %>"
+                                    data-type="<%= a.type || '-' %>"
+                                    data-vet="<%= a.vet_name || '-' %>"
+                                    data-detail="<%= a.detail || '-' %>">
+                                    <i class="fa-solid fa-calendar-xmark"></i>
+                                  </button>
+                                <% } else { %>
+                                  <span class="text-muted">-</span>
+                                <% } %>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  <% } %>
                 </div>
-                <% } else { %>
-                <div class="table-responsive">
-                  <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                      <tr>
-                        <th>วันและเวลา</th>
-                        <th>สัตว์เลี้ยง</th>
-                        <th>หัวข้อ / ประเภท</th>
-                        <th>สัตวแพทย์</th>
-                        <th>สถานะ</th>
-                        <th>รายละเอียด</th>
-                        <th>จัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <% filtered.forEach(a => { %>
-                      <tr data-search="<%= [a.pet_name, a.owner_name, a.title, a.type, a.vet_name].join(' ').toLowerCase() %>">
-                        <td class="text-nowrap">
-                          <div class="fw-semibold"><%= a.appointment_date %></div>
-                          <small class="text-muted"><%= String(a.appointment_time || '').slice(0, 5) %></small>
-                        </td>
-                        <td>
-                          <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name || '-' %></div>
-                          <small class="text-muted"><%= a.owner_name || '-' %></small>
-                        </td>
-                        <td>
-                          <div><%= a.title || '-' %></div>
-                          <small class="text-muted"><%= a.type || '-' %></small>
-                        </td>
-                        <td><%= a.vet_name || '-' %></td>
-                        <td>
-                          <% if (a.status === 'pending') { %>
-                          <span class="badge text-bg-warning">Pending</span>
-                          <% } else if (a.status === 'confirmed') { %>
-                          <span class="badge text-bg-success">Confirmed</span>
-                          <% } else if (a.status === 'cancelled') { %>
-                          <span class="badge text-bg-danger">Cancelled</span>
-                          <% } else { %>
-                          <span class="badge text-bg-secondary">Completed</span>
-                          <% } %>
-                        </td>
-                        <td>
-                          <button type="button" class="btn btn-sm btn-outline-primary detail-button" data-bs-toggle="modal" data-bs-target="#appointmentModal" data-title="<%= a.title || 'Appointment' %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-type="<%= a.type || '-' %>" data-vet="<%= a.vet_name || '-' %>" data-status="<%= a.status %>" data-detail="<%= a.detail || '-' %>" data-status-detail="<%= a.status_detail || '-' %>">
-                            <i class="fa-solid fa-eye"></i>
-                          </button>
-                        </td>
-                        <td class="text-nowrap">
-                          <% if (a.status === 'pending') { %>
-                          <button type="button" class="btn btn-sm btn-outline-success confirm-button" data-bs-toggle="modal" data-bs-target="#confirmModal" data-id="<%= a.appointment_id %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-title="<%= a.title || '-' %>" data-type="<%= a.type || '-' %>" data-detail="<%= a.detail || '-' %>">
-                            <i class="fa-solid fa-calendar-check"></i>
-                          </button>
-                          <% } else if (a.status === 'confirmed') { %>
-                          <button type="button" class="btn btn-sm btn-outline-danger cancel-button" data-bs-toggle="modal" data-bs-target="#cancelModal" data-id="<%= a.appointment_id %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-title="<%= a.title || '-' %>" data-type="<%= a.type || '-' %>" data-vet="<%= a.vet_name || '-' %>" data-detail="<%= a.detail || '-' %>">
-                            <i class="fa-solid fa-calendar-xmark"></i>
-                          </button>
-                          <% } else { %>
-                          <span class="text-muted">-</span>
-                          <% } %>
-                        </td>
-                      </tr>
-                      <% }) %>
-                    </tbody>
-                  </table>
-                </div>
-                <% } %>
-              </div>
               <% }) %>
               <p id="noAppointmentResult" class="text-center text-muted py-3 d-none">ไม่พบผลการค้นหา</p>
             </div>
@@ -160,8 +222,9 @@
     </div>
   </div>
 
+  <!-- Create Appointment Modal -->
   <div class="modal fade" id="createAppointmentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form action="/appointments/create" method="POST" id="createAppointmentForm">
           <div class="modal-header">
@@ -170,88 +233,89 @@
           </div>
           <div class="modal-body">
             <div class="row g-3">
-              
-<div class="col-md-6">
-  <label for="createPetOwnerSearch" class="form-label">
-    ค้นหา PetOwner <span class="text-danger">*</span>
-  </label>
-  <input
-    type="text"
-    id="createPetOwnerSearch"
-    class="form-control mb-2"
-    placeholder="ค้นหาชื่อ นามสกุล หรือ Username..."
-    autocomplete="off"
-  >
-  <select name="pet_owner_id" id="createPetOwnerId" class="form-select" required>
-    <option value="">-- เลือก PetOwner --</option>
-    <% (petOwners || []).forEach(o => { %>
-      <option
-        value="<%= o.pet_owner_id %>"
-        data-search="<%= `${o.first_name} ${o.last_name} ${o.username}`.toLowerCase() %>"
-      ><%= o.first_name %> <%= o.last_name %> (@<%= o.username %>)</option>
-    <% }) %>
-  </select>
-</div>
-<div class="col-md-6">
-  <label for="createPetSearch" class="form-label">
-    ค้นหาสัตว์เลี้ยง <span class="text-danger">*</span>
-  </label>
-  <input
-    type="text"
-    id="createPetSearch"
-    class="form-control mb-2"
-    placeholder="ค้นหาชื่อสัตว์เลี้ยง..."
-    autocomplete="off"
-  >
-  <select name="pet_id" id="createPetId" class="form-select" required disabled>
-    <option value="">-- เลือก PetOwner ก่อน --</option>
-    <% (pets || []).forEach(p => { %>
-      <option
-        value="<%= p.pet_id %>"
-        data-owner-id="<%= p.pet_owner_id %>"
-        data-search="<%= p.pet_name.toLowerCase() %>"
-      ><%= p.pet_name %></option>
-    <% }) %>
-  </select>
-  <div class="form-text">เลือก PetOwner ก่อนเพื่อกรองสัตว์เลี้ยงของเจ้าของรายนั้น</div>
-</div>
+              <div class="col-md-6">
+                <label for="createPetOwnerSearch" class="form-label">ค้นหา PetOwner <span class="text-danger">*</span></label>
+                <input type="text" id="createPetOwnerSearch" class="form-control mb-2"
+                  placeholder="ค้นหาชื่อ นามสกุล หรือ Username..." autocomplete="off">
+                <select name="pet_owner_id" id="createPetOwnerId" class="form-select" required>
+                  <option value="">-- เลือก PetOwner --</option>
+                  <% (petOwners || []).forEach(o => { %>
+                    <option value="<%= o.pet_owner_id %>"
+                      data-search="<%= `${o.first_name || ''} ${o.last_name || ''} ${o.username || ''}`.toLowerCase() %>">
+                      <%= o.first_name || '' %> <%= o.last_name || '' %> (@<%= o.username || '-' %>)
+                    </option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label for="createPetSearch" class="form-label">ค้นหาสัตว์เลี้ยง <span class="text-danger">*</span></label>
+                <input type="text" id="createPetSearch" class="form-control mb-2"
+                  placeholder="ค้นหาชื่อสัตว์เลี้ยง..." autocomplete="off">
+                <select name="pet_id" id="createPetId" class="form-select" required disabled>
+                  <option value="">-- เลือก PetOwner ก่อน --</option>
+                  <% (pets || []).forEach(p => { %>
+                    <option value="<%= p.pet_id %>"
+                      data-owner-id="<%= p.pet_owner_id %>"
+                      data-search="<%= (p.pet_name || '').toLowerCase() %>">
+                      <%= p.pet_name || '-' %>
+                    </option>
+                  <% }) %>
+                </select>
+                <div class="form-text">เลือก PetOwner ก่อนเพื่อกรองสัตว์เลี้ยงของเจ้าของรายนั้น</div>
+              </div>
 
               <div class="col-md-6">
                 <label for="createVetId" class="form-label">สัตวแพทย์ <span class="text-danger">*</span></label>
                 <select name="vet_id" id="createVetId" class="form-select" required>
                   <option value="">-- เลือกสัตวแพทย์ --</option>
                   <% vets.forEach(v => { %>
-                  <option value="<%= v.vet_id %>"><%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)</option>
+                    <option value="<%= v.vet_id %>">
+                      <%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)
+                    </option>
                   <% }) %>
                 </select>
               </div>
+
+              <div class="col-12">
+                <div class="border rounded p-3">
+                  <div class="fw-bold mb-2">
+                    <i class="fa-solid fa-calendar-check me-2"></i>ตารางนัดสัตวแพทย์
+                  </div>
+                  <div id="vetCompletedTimes" class="small mb-2">เลือกสัตวแพทย์และวันที่เพื่อดูตารางนัด</div>
+                  <div id="vetBookedTimes" class="small"></div>
+                </div>
+              </div>
+
               <div class="col-md-6">
-  <label for="createAppointmentDate" class="form-label">วันที่นัด <span class="text-danger">*</span></label>
-  <input type="date" name="appointment_date" id="createAppointmentDate" class="form-control" required>
-</div>
-<div class="col-md-6">
-  <label for="createAppointmentTime" class="form-label">เวลานัด <span class="text-danger">*</span></label>
-  <select name="appointment_time" id="createAppointmentTime" class="form-select" required>
-    <option value="">-- เลือกเวลานัด --</option>
-    <option value="09:00">09:00 น.</option>
-    <option value="09:30">09:30 น.</option>
-    <option value="10:00">10:00 น.</option>
-    <option value="10:30">10:30 น.</option>
-    <option value="11:00">11:00 น.</option>
-    <option value="11:30">11:30 น.</option>
-    <option value="12:00">12:00 น.</option>
-    <option value="12:30">12:30 น.</option>
-    <option value="13:00">13:00 น.</option>
-    <option value="13:30">13:30 น.</option>
-    <option value="14:00">14:00 น.</option>
-    <option value="14:30">14:30 น.</option>
-    <option value="15:00">15:00 น.</option>
-    <option value="15:30">15:30 น.</option>
-    <option value="16:00">16:00 น.</option>
-    <option value="16:30">16:30 น.</option>
-  </select>
-  <div class="form-text">เลือกเวลานัดได้ตั้งแต่ 09:00–16:30 น. ทุก 30 นาที</div>
-</div>
+                <label for="createAppointmentDate" class="form-label">วันที่นัด <span class="text-danger">*</span></label>
+                <input type="date" name="appointment_date" id="createAppointmentDate" class="form-control" required>
+              </div>
+
+              <div class="col-md-6">
+                <label for="createAppointmentTime" class="form-label">เวลานัด <span class="text-danger">*</span></label>
+                <select name="appointment_time" id="createAppointmentTime" class="form-select" required>
+                  <option value="">-- เลือกเวลานัด --</option>
+                  <option value="09:00">09:00 น.</option>
+                  <option value="09:30">09:30 น.</option>
+                  <option value="10:00">10:00 น.</option>
+                  <option value="10:30">10:30 น.</option>
+                  <option value="11:00">11:00 น.</option>
+                  <option value="11:30">11:30 น.</option>
+                  <option value="12:00">12:00 น.</option>
+                  <option value="12:30">12:30 น.</option>
+                  <option value="13:00">13:00 น.</option>
+                  <option value="13:30">13:30 น.</option>
+                  <option value="14:00">14:00 น.</option>
+                  <option value="14:30">14:30 น.</option>
+                  <option value="15:00">15:00 น.</option>
+                  <option value="15:30">15:30 น.</option>
+                  <option value="16:00">16:00 น.</option>
+                  <option value="16:30">16:30 น.</option>
+                </select>
+                <div class="form-text">เลือกเวลานัดได้ตั้งแต่ 09:00–16:30 น. ทุก 30 นาที</div>
+              </div>
+
               <div class="col-md-6">
                 <label for="createType" class="form-label">ประเภทนัดหมาย</label>
                 <select name="type" id="createType" class="form-select">
@@ -260,16 +324,18 @@
                   <option value="Follow-up">Follow-up</option>
                 </select>
               </div>
+
               <div class="col-12">
                 <label for="createTitle" class="form-label">หัวข้อนัดหมาย</label>
-                <select name="title" class="form-select" required>
-  <option value="Health Checkup">Health Checkup</option>
-  <option value="Vaccination">Vaccination</option>
-  <option value="Sick Visit / Consultation">Sick Visit / Consultation</option>
-  <option value="Spay / Neuter">Spay / Neuter</option>
-  <option value="Grooming / Boarding">Grooming / Boarding</option>
-</select>
+                <select name="title" id="createTitle" class="form-select" required>
+                  <option value="Health Checkup">Health Checkup</option>
+                  <option value="Vaccination">Vaccination</option>
+                  <option value="Sick Visit / Consultation">Sick Visit / Consultation</option>
+                  <option value="Spay / Neuter">Spay / Neuter</option>
+                  <option value="Grooming / Boarding">Grooming / Boarding</option>
+                </select>
               </div>
+
               <div class="col-12">
                 <label for="createDetail" class="form-label">รายละเอียด</label>
                 <textarea name="detail" id="createDetail" class="form-control" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
@@ -288,6 +354,7 @@
     </div>
   </div>
 
+  <!-- Appointment Detail Modal -->
   <div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -297,30 +364,14 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small>
-              <div id="modalPet" class="fw-semibold"></div>
-            </div>
-            <div class="col-6"><small class="text-muted">เจ้าของ</small>
-              <div id="modalOwner"></div>
-            </div>
-            <div class="col-6"><small class="text-muted">วันที่</small>
-              <div id="modalDate"></div>
-            </div>
-            <div class="col-6"><small class="text-muted">เวลา</small>
-              <div id="modalTime"></div>
-            </div>
-            <div class="col-6"><small class="text-muted">ประเภท</small>
-              <div id="modalType"></div>
-            </div>
-            <div class="col-6"><small class="text-muted">สัตวแพทย์</small>
-              <div id="modalVet"></div>
-            </div>
-            <div class="col-12"><small class="text-muted">สถานะ</small>
-              <div id="modalStatus"></div>
-            </div>
-            <div class="col-12"><small class="text-muted">รายละเอียด</small>
-              <p id="modalDetail" class="mb-0 text-break"></p>
-            </div>
+            <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="modalPet" class="fw-semibold"></div></div>
+            <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="modalOwner"></div></div>
+            <div class="col-6"><small class="text-muted">วันที่</small><div id="modalDate"></div></div>
+            <div class="col-6"><small class="text-muted">เวลา</small><div id="modalTime"></div></div>
+            <div class="col-6"><small class="text-muted">ประเภท</small><div id="modalType"></div></div>
+            <div class="col-6"><small class="text-muted">สัตวแพทย์</small><div id="modalVet"></div></div>
+            <div class="col-12"><small class="text-muted">สถานะ</small><div id="modalStatus"></div></div>
+            <div class="col-12"><small class="text-muted">รายละเอียด</small><p id="modalDetail" class="mb-0 text-break"></p></div>
             <div class="col-12" id="modalStatusDetailContainer">
               <small class="text-muted">หมายเหตุสถานะ</small>
               <p id="modalStatusDetail" class="mb-0 text-break"></p>
@@ -334,6 +385,7 @@
     </div>
   </div>
 
+  <!-- Confirm Appointment Modal -->
   <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -346,33 +398,19 @@
             <input type="hidden" name="appointment_id" id="confirmId">
             <h6 class="fw-bold mb-3">ตรวจสอบรายละเอียดนัดหมาย</h6>
             <div class="row g-3 mb-4">
-              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small>
-                <div id="confirmPet" class="fw-semibold"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">เจ้าของ</small>
-                <div id="confirmOwner"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">วันที่</small>
-                <div id="confirmDate"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">เวลา</small>
-                <div id="confirmTime"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">หัวข้อ</small>
-                <div id="confirmTitle"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">ประเภท</small>
-                <div id="confirmType"></div>
-              </div>
-              <div class="col-12"><small class="text-muted">รายละเอียด</small>
-                <div id="confirmDetail" class="text-break"></div>
-              </div>
+              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="confirmPet" class="fw-semibold"></div></div>
+              <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="confirmOwner"></div></div>
+              <div class="col-6"><small class="text-muted">วันที่</small><div id="confirmDate"></div></div>
+              <div class="col-6"><small class="text-muted">เวลา</small><div id="confirmTime"></div></div>
+              <div class="col-6"><small class="text-muted">หัวข้อ</small><div id="confirmTitle"></div></div>
+              <div class="col-6"><small class="text-muted">ประเภท</small><div id="confirmType"></div></div>
+              <div class="col-12"><small class="text-muted">รายละเอียด</small><div id="confirmDetail" class="text-break"></div></div>
             </div>
             <label for="confirmVet" class="form-label fw-semibold">เลือกสัตวแพทย์ <span class="text-danger">*</span></label>
             <select name="vet_id" id="confirmVet" class="form-select" required>
               <option value="">-- เลือกสัตวแพทย์ --</option>
               <% vets.forEach(v => { %>
-              <option value="<%= v.vet_id %>"><%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)</option>
+                <option value="<%= v.vet_id %>"><%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)</option>
               <% }) %>
             </select>
             <div id="vetAvailabilityMessage" class="form-text">ระบบจะตรวจสอบนัดหมายก่อนยืนยัน</div>
@@ -386,6 +424,7 @@
     </div>
   </div>
 
+  <!-- Cancel Appointment Modal -->
   <div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -400,30 +439,14 @@
               <i class="fa-solid fa-triangle-exclamation me-1"></i>กรุณาตรวจสอบรายละเอียดก่อนยกเลิกนัดหมาย
             </div>
             <div class="row g-3 mb-4">
-              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small>
-                <div id="cancelPet" class="fw-semibold"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">เจ้าของ</small>
-                <div id="cancelOwner"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">วันที่</small>
-                <div id="cancelDate"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">เวลา</small>
-                <div id="cancelTime"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">หัวข้อ</small>
-                <div id="cancelTitle"></div>
-              </div>
-              <div class="col-6"><small class="text-muted">ประเภท</small>
-                <div id="cancelType"></div>
-              </div>
-              <div class="col-12"><small class="text-muted">สัตวแพทย์</small>
-                <div id="cancelVet"></div>
-              </div>
-              <div class="col-12"><small class="text-muted">รายละเอียด</small>
-                <div id="cancelDetail" class="text-break"></div>
-              </div>
+              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="cancelPet" class="fw-semibold"></div></div>
+              <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="cancelOwner"></div></div>
+              <div class="col-6"><small class="text-muted">วันที่</small><div id="cancelDate"></div></div>
+              <div class="col-6"><small class="text-muted">เวลา</small><div id="cancelTime"></div></div>
+              <div class="col-6"><small class="text-muted">หัวข้อ</small><div id="cancelTitle"></div></div>
+              <div class="col-6"><small class="text-muted">ประเภท</small><div id="cancelType"></div></div>
+              <div class="col-12"><small class="text-muted">สัตวแพทย์</small><div id="cancelVet"></div></div>
+              <div class="col-12"><small class="text-muted">รายละเอียด</small><div id="cancelDetail" class="text-break"></div></div>
             </div>
             <label for="cancelReason" class="form-label fw-semibold">เหตุผลในการยกเลิก <span class="text-danger">*</span></label>
             <textarea name="status_detail" id="cancelReason" class="form-control" rows="3" maxlength="1000" placeholder="ระบุเหตุผลในการยกเลิกนัดหมาย" required></textarea>
@@ -437,78 +460,286 @@
       </div>
     </div>
   </div>
+
   <div id="appointmentData"
-     data-busy-appointments="<%= JSON.stringify(busyAppointments || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') %>">
-</div>
+    data-busy-appointments="<%= JSON.stringify(busyAppointments || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') %>">
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const createForm = document.getElementById('createAppointmentForm');
-      const dateTimeInput = document.getElementById('createDateTime');
+      const ownerSearch = document.getElementById('createPetOwnerSearch');
+      const ownerSelect = document.getElementById('createPetOwnerId');
+      const petSearch = document.getElementById('createPetSearch');
       const petSelect = document.getElementById('createPetId');
       const vetSelect = document.getElementById('createVetId');
+      const dateInput = document.getElementById('createAppointmentDate');
+      const timeSelect = document.getElementById('createAppointmentTime');
       const typeSelect = document.getElementById('createType');
-      const message = document.getElementById('createAppointmentMessage');
+      const createMessage = document.getElementById('createAppointmentMessage');
       const submitButton = document.getElementById('createAppointmentSubmit');
       const modalElement = document.getElementById('createAppointmentModal');
+      const completedBox = document.getElementById('vetCompletedTimes');
+      const bookedBox = document.getElementById('vetBookedTimes');
+      const timeMessage = document.createElement('div');
 
-      function toLocalDateTimeValue(date) {
-        const pad = value => String(value).padStart(2, '0');
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      timeMessage.className = 'small mt-2';
+      timeMessage.setAttribute('aria-live', 'polite');
+      timeSelect.parentElement.appendChild(timeMessage);
+
+      const today = new Date();
+      dateInput.min = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+      ].join('-');
+
+      const ownerOptions = Array.from(ownerSelect.options).slice(1);
+      const petOptions = Array.from(petSelect.options).slice(1);
+      let bookedTimes = [];
+      let requestId = 0;
+      let scheduleLoaded = false;
+
+      function showCreateMessage(text, isError = false) {
+        createMessage.textContent = text;
+        createMessage.className = `mt-3 small ${isError ? 'text-danger' : 'text-muted'}`;
       }
 
-      function updateMinimumDateTime() {
-        dateTimeInput.min = toLocalDateTimeValue(new Date());
+      function showTimeMessage(text, isError = false) {
+        timeMessage.textContent = text;
+        timeMessage.className = `small mt-2 ${isError ? 'text-danger' : 'text-success'}`;
       }
 
-      function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.className = isError ? 'mt-3 small text-danger' : 'mt-3 small text-muted';
+      function toMinutes(value) {
+        const [hours, minutes] = value.split(':').map(Number);
+        return hours * 60 + minutes;
       }
 
-      document.querySelector('[data-bs-target="#createAppointmentModal"]').addEventListener('click', () => {
-        updateMinimumDateTime();
-        showMessage('');
+      function checkSelectedTime() {
+        const time = timeSelect.value;
+
+        if (!time) {
+          showTimeMessage('');
+          return true;
+        }
+
+        if (!scheduleLoaded) {
+          showTimeMessage('กรุณารอให้ระบบตรวจสอบตารางนัดก่อน', true);
+          return false;
+        }
+
+        const selectedDateTime = new Date(`${dateInput.value}T${time}:00`);
+
+        if (selectedDateTime < new Date()) {
+          showTimeMessage('เวลาที่เลือกผ่านมาแล้ว กรุณาเลือกเวลาใหม่', true);
+          return false;
+        }
+
+        const conflictTime = bookedTimes.find(bookedTime =>
+          Math.abs(toMinutes(bookedTime) - toMinutes(time)) < 30
+        );
+
+        if (conflictTime) {
+          showTimeMessage(
+            `เวลา ${time} น. มีนัดเวลา ${conflictTime} น. อยู่ในช่วงห่างน้อยกว่า 30 นาที`,
+            true
+          );
+          return false;
+        }
+
+        showTimeMessage(`เวลา ${time} น. สามารถเลือกได้`);
+        return true;
+      }
+
+      async function loadVetSchedule() {
+        const currentRequest = ++requestId;
+        const vetId = vetSelect.value;
+        const date = dateInput.value;
+
+        bookedTimes = [];
+        scheduleLoaded = false;
+        completedBox.textContent = 'กำลังโหลดตารางนัด...';
+        bookedBox.textContent = '';
+        showTimeMessage('');
+
+        if (!vetId || !date) {
+          completedBox.textContent = 'เลือกสัตวแพทย์และวันที่เพื่อดูตารางนัด';
+          bookedBox.textContent = '';
+          return;
+        }
+
+        try {
+          const params = new URLSearchParams({
+            vet_id: vetId,
+            appointment_date: date
+          });
+
+          const response = await fetch(`/appointments/vet-schedule?${params}`);
+
+          if (!response.ok) {
+            throw new Error('โหลดตารางนัดไม่สำเร็จ');
+          }
+
+          const data = await response.json();
+
+          if (currentRequest !== requestId) return;
+
+          bookedTimes = (data.booked || []).map(time => String(time).slice(0, 5));
+          const completedTimes = (data.completed || []).map(time => String(time).slice(0, 5));
+          scheduleLoaded = true;
+
+          completedBox.textContent = completedTimes.length
+            ? `นัดที่เสร็จแล้ว: ${completedTimes.map(time => time + ' น.').join(', ')}`
+            : 'ยังไม่มีนัดที่เสร็จแล้วในวันนี้';
+
+          bookedBox.textContent = bookedTimes.length
+            ? `เวลาที่มีการจองอยู่: ${bookedTimes.map(time => time + ' น.').join(', ')}`
+            : 'ยังไม่มีนัดที่กำลังจองในวันนี้';
+
+          checkSelectedTime();
+        } catch (error) {
+          if (currentRequest !== requestId) return;
+
+          scheduleLoaded = false;
+          completedBox.textContent = 'ไม่สามารถโหลดตารางนัดได้';
+          bookedBox.textContent = 'กรุณาลองเลือกสัตวแพทย์หรือวันที่ใหม่';
+          showTimeMessage('ตรวจสอบตารางนัดไม่ได้ จึงยังไม่สามารถยืนยันเวลานี้ได้', true);
+        }
+      }
+
+      function filterOwners() {
+        const keyword = ownerSearch.value.trim().toLowerCase();
+        const currentValue = ownerSelect.value;
+        let selectedStillVisible = false;
+
+        ownerOptions.forEach(option => {
+          const matches = (option.dataset.search || '').includes(keyword);
+          option.hidden = !matches;
+
+          if (option.value === currentValue && matches) {
+            selectedStillVisible = true;
+          }
+        });
+
+        if (currentValue && !selectedStillVisible) {
+          ownerSelect.value = '';
+          filterPets();
+        }
+      }
+
+      function filterPets() {
+        const ownerId = ownerSelect.value;
+        const keyword = petSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        petOptions.forEach(option => {
+          const matchesOwner = ownerId && option.dataset.ownerId === ownerId;
+          const matchesName = (option.dataset.search || '').includes(keyword);
+          const visible = Boolean(matchesOwner && matchesName);
+
+          option.hidden = !visible;
+          if (visible) visibleCount++;
+        });
+
+        petSelect.value = '';
+        petSelect.disabled = !ownerId;
+        petSelect.options[0].textContent = !ownerId
+          ? '-- เลือก PetOwner ก่อน --'
+          : visibleCount
+            ? '-- เลือกสัตว์เลี้ยง --'
+            : '-- ไม่พบสัตว์เลี้ยง --';
+      }
+
+      function showText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value || '-';
+      }
+
+      function filterAppointments() {
+        const query = document.getElementById('appointmentSearch').value.trim().toLowerCase();
+        const currentGroup = document.querySelector('.appointment-group:not(.d-none)');
+        let shown = 0;
+        const rows = currentGroup ? currentGroup.querySelectorAll('tbody tr') : [];
+
+        rows.forEach(row => {
+          const visible = (row.dataset.search || '').includes(query);
+          row.classList.toggle('d-none', !visible);
+          if (visible) shown++;
+        });
+
+        const emptyState = currentGroup?.querySelector('.empty-state');
+        if (emptyState) {
+          emptyState.classList.toggle('d-none', query.length > 0);
+        }
+
+        document.getElementById('noAppointmentResult').classList.toggle(
+          'd-none',
+          !currentGroup || rows.length === 0 || shown > 0
+        );
+      }
+
+      ownerSearch.addEventListener('input', filterOwners);
+
+      ownerSelect.addEventListener('change', () => {
+        petSearch.value = '';
+        filterPets();
       });
+
+      petSearch.addEventListener('input', filterPets);
+      filterPets();
+
+      vetSelect.addEventListener('change', loadVetSchedule);
+      dateInput.addEventListener('change', loadVetSchedule);
+      timeSelect.addEventListener('change', checkSelectedTime);
 
       typeSelect.addEventListener('change', () => {
         if (typeSelect.value === 'Walk-in') {
-          updateMinimumDateTime();
-          if (!dateTimeInput.value || dateTimeInput.value < dateTimeInput.min) {
-            dateTimeInput.value = dateTimeInput.min;
-          }
+          showCreateMessage('กรุณาตรวจสอบวันและเวลานัดก่อนบันทึก');
+        } else {
+          showCreateMessage('');
         }
       });
 
-      dateTimeInput.addEventListener('change', () => {
-        updateMinimumDateTime();
-        if (dateTimeInput.value && dateTimeInput.value < dateTimeInput.min) {
-          dateTimeInput.value = dateTimeInput.min;
-          showMessage('ไม่สามารถเลือกเวลาที่ผ่านมาแล้วได้', true);
-        }
+      document.querySelector('[data-bs-target="#createAppointmentModal"]').addEventListener('click', () => {
+        showCreateMessage('');
       });
 
       createForm.addEventListener('submit', event => {
-        updateMinimumDateTime();
-        const appointmentDateTime = dateTimeInput.value;
-
-        if (!petSelect.value || !vetSelect.value || !appointmentDateTime) {
+        if (!ownerSelect.value || !petSelect.value || !vetSelect.value || !dateInput.value || !timeSelect.value) {
           event.preventDefault();
-          showMessage('กรุณาเลือกสัตว์เลี้ยง สัตวแพทย์ และวันเวลานัดให้ครบ', true);
+          showCreateMessage('กรุณาเลือก PetOwner สัตว์เลี้ยง สัตวแพทย์ วันที่ และเวลาให้ครบ', true);
           return;
         }
 
-        const appointmentDate = new Date(appointmentDateTime);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        appointmentDate.setHours(0, 0, 0, 0);
-        
-        if (appointmentDate < today) {
+        if (!scheduleLoaded || !checkSelectedTime()) {
           event.preventDefault();
-          showMessage('ไม่สามารถเลือกวันที่ผ่านมาแล้วได้', true);
+
+          if (!scheduleLoaded) {
+            showTimeMessage('กรุณารอให้ระบบตรวจสอบตารางนัดก่อนบันทึก', true);
+          }
           return;
         }
 
+        const selectedDateTime = `${dateInput.value}T${timeSelect.value}`;
+        const selected = new Date(`${selectedDateTime}:00`);
+
+        if (Number.isNaN(selected.getTime()) || selected < new Date()) {
+          event.preventDefault();
+          showCreateMessage('กรุณาเลือกวันและเวลานัดตั้งแต่ปัจจุบันเป็นต้นไป', true);
+          return;
+        }
+
+        let hiddenInput = createForm.querySelector('[name="appointment_datetime"]');
+
+        if (!hiddenInput) {
+          hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = 'appointment_datetime';
+          createForm.appendChild(hiddenInput);
+        }
+
+        hiddenInput.value = selectedDateTime;
         submitButton.disabled = true;
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
       });
@@ -517,34 +748,6 @@
         submitButton.disabled = false;
         submitButton.innerHTML = '<i class="fa-solid fa-check me-1"></i>บันทึกนัดหมาย';
       });
-
-      function setText(id, value) {
-        document.getElementById(id).textContent = value || '-';
-      }
-
-
-function filterAppointments() {
-  const query = document.getElementById('appointmentSearch').value.trim().toLowerCase();
-  const currentGroup = document.querySelector('.appointment-group:not(.d-none)');
-  let shown = 0;
-  const rows = currentGroup ? currentGroup.querySelectorAll('tbody tr') : [];
-
-  rows.forEach(row => {
-    const visible = (row.dataset.search || '').includes(query);
-    row.classList.toggle('d-none', !visible);
-    if (visible) shown++;
-  });
-
-  const emptyState = currentGroup?.querySelector('.empty-state');
-  if (emptyState) {
-    emptyState.classList.toggle('d-none', query.length > 0);
-  }
-
-  document.getElementById('noAppointmentResult').classList.toggle(
-    'd-none',
-    !currentGroup || rows.length === 0 || shown > 0
-  );
-}
 
       document.querySelectorAll('.status-toggle').forEach(button => {
         button.addEventListener('click', () => {
@@ -566,15 +769,16 @@ function filterAppointments() {
       document.querySelectorAll('.detail-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
-          setText('modalTitle', data.title);
-          setText('modalPet', data.pet);
-          setText('modalOwner', data.owner);
-          setText('modalDate', data.date);
-          setText('modalTime', data.time);
-          setText('modalType', data.type);
-          setText('modalVet', data.vet);
-          setText('modalDetail', data.detail);
-          setText('modalStatusDetail', data.statusDetail);
+
+          showText('modalTitle', data.title);
+          showText('modalPet', data.pet);
+          showText('modalOwner', data.owner);
+          showText('modalDate', data.date);
+          showText('modalTime', data.time);
+          showText('modalType', data.type);
+          showText('modalVet', data.vet);
+          showText('modalDetail', data.detail);
+          showText('modalStatusDetail', data.statusDetail);
 
           const labels = {
             pending: 'Pending',
@@ -583,30 +787,40 @@ function filterAppointments() {
             completed: 'Completed'
           };
 
-          setText('modalStatus', labels[data.status] || data.status);
-          document.getElementById('modalStatusDetailContainer').classList.toggle('d-none', !data.statusDetail || data.statusDetail === '-');
+          showText('modalStatus', labels[data.status] || data.status);
+          document.getElementById('modalStatusDetailContainer').classList.toggle(
+            'd-none',
+            !data.statusDetail || data.statusDetail === '-'
+          );
         });
       });
+
       const appointmentData = document.getElementById('appointmentData');
-const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || '[]');
+      let busyAppointments = [];
 
+      try {
+        busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || '[]');
+      } catch (error) {
+        busyAppointments = [];
+      }
 
-      
       document.querySelectorAll('.confirm-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
+          showText('confirmId', data.id);
           document.getElementById('confirmId').value = data.id;
-          setText('confirmPet', data.pet);
-          setText('confirmOwner', data.owner);
-          setText('confirmDate', data.date);
-          setText('confirmTime', data.time);
-          setText('confirmTitle', data.title);
-          setText('confirmType', data.type);
-          setText('confirmDetail', data.detail);
+          showText('confirmPet', data.pet);
+          showText('confirmOwner', data.owner);
+          showText('confirmDate', data.date);
+          showText('confirmTime', data.time);
+          showText('confirmTitle', data.title);
+          showText('confirmType', data.type);
+          showText('confirmDetail', data.detail);
 
           const select = document.getElementById('confirmVet');
           const availabilityMessage = document.getElementById('vetAvailabilityMessage');
           const submit = document.getElementById('confirmSubmit');
+
           select.value = '';
           let availableCount = 0;
 
@@ -628,11 +842,14 @@ const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || 
             if (!busy) availableCount++;
           });
 
-          availabilityMessage.textContent = availableCount ?
-            'เลือกได้เฉพาะสัตวแพทย์ที่ไม่มีนัดยืนยันแล้วในวันและเวลาเดียวกัน' :
-            'ไม่มีสัตวแพทย์ว่างในวันและเวลานี้ กรุณาตรวจสอบนัดหมาย';
+          availabilityMessage.textContent = availableCount
+            ? 'เลือกได้เฉพาะสัตวแพทย์ที่ไม่มีนัดในวันและเวลาเดียวกัน'
+            : 'ไม่มีสัตวแพทย์ว่างในวันและเวลานี้ กรุณาตรวจสอบนัดหมาย';
 
-          availabilityMessage.className = availableCount ? 'form-text text-muted' : 'form-text text-danger';
+          availabilityMessage.className = availableCount
+            ? 'form-text text-muted'
+            : 'form-text text-danger';
+
           submit.disabled = availableCount === 0;
         });
       });
@@ -640,15 +857,16 @@ const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || 
       document.querySelectorAll('.cancel-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
+
           document.getElementById('cancelId').value = data.id;
-          setText('cancelPet', data.pet);
-          setText('cancelOwner', data.owner);
-          setText('cancelDate', data.date);
-          setText('cancelTime', data.time);
-          setText('cancelTitle', data.title);
-          setText('cancelType', data.type);
-          setText('cancelVet', data.vet);
-          setText('cancelDetail', data.detail);
+          showText('cancelPet', data.pet);
+          showText('cancelOwner', data.owner);
+          showText('cancelDate', data.date);
+          showText('cancelTime', data.time);
+          showText('cancelTitle', data.title);
+          showText('cancelType', data.type);
+          showText('cancelVet', data.vet);
+          showText('cancelDetail', data.detail);
           document.getElementById('cancelReason').value = '';
         });
       });
@@ -658,7 +876,7 @@ const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || 
 
         if (!select.value || select.selectedOptions[0].disabled) {
           event.preventDefault();
-          setText('vetAvailabilityMessage', 'กรุณาเลือกสัตวแพทย์ที่ว่าง');
+          showText('vetAvailabilityMessage', 'กรุณาเลือกสัตวแพทย์ที่ว่าง');
           select.focus();
         }
       });
@@ -683,133 +901,5 @@ const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || 
       });
     });
   </script>
-  
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('createAppointmentForm');
-  const dateInput = document.getElementById('createAppointmentDate');
-  const timeInput = document.getElementById('createAppointmentTime');
-
-  const today = new Date();
-  const localToday = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0')
-  ].join('-');
-
-  dateInput.min = localToday;
-
-  form.addEventListener('submit', (event) => {
-    if (!dateInput.value || !timeInput.value) {
-      event.preventDefault();
-      return;
-    }
-
-    const selectedDateTime = `${dateInput.value}T${timeInput.value}`;
-    const selected = new Date(selectedDateTime);
-    const now = new Date();
-
-    if (selected < now) {
-      event.preventDefault();
-      alert('กรุณาเลือกวันและเวลานัดตั้งแต่ปัจจุบันเป็นต้นไป');
-      return;
-    }
-
-    let hiddenInput = form.querySelector('[name="appointment_datetime"]');
-
-    if (!hiddenInput) {
-      hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = 'appointment_datetime';
-      form.appendChild(hiddenInput);
-    }
-
-    hiddenInput.value = selectedDateTime;
-    dateInput.disabled = true;
-    timeInput.disabled = true;
-  });
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const ownerSearch = document.getElementById('createPetOwnerSearch');
-  const ownerSelect = document.getElementById('createPetOwnerId');
-  const petSearch = document.getElementById('createPetSearch');
-  const petSelect = document.getElementById('createPetId');
-  const form = document.getElementById('createAppointmentForm');
-
-  const ownerOptions = Array.from(ownerSelect.options).slice(1);
-  const petOptions = Array.from(petSelect.options).slice(1);
-
-  function filterOwners() {
-    const keyword = ownerSearch.value.trim().toLowerCase();
-    const currentValue = ownerSelect.value;
-    let selectedStillVisible = false;
-
-    ownerOptions.forEach(option => {
-      const matches = option.dataset.search.includes(keyword);
-      option.hidden = !matches;
-
-      if (option.value === currentValue && matches) {
-        selectedStillVisible = true;
-      }
-    });
-
-    if (currentValue && !selectedStillVisible) {
-      ownerSelect.value = '';
-      filterPets();
-    }
-  }
-
-  function filterPets() {
-    const ownerId = ownerSelect.value;
-    const keyword = petSearch.value.trim().toLowerCase();
-    let visibleCount = 0;
-
-    petOptions.forEach(option => {
-      const matchesOwner = ownerId &&
-        option.dataset.ownerId === ownerId;
-      const matchesName = option.dataset.search.includes(keyword);
-      const visible = Boolean(matchesOwner && matchesName);
-
-      option.hidden = !visible;
-
-      if (visible) visibleCount++;
-    });
-
-    petSelect.value = '';
-    petSelect.disabled = !ownerId;
-
-    petSelect.options[0].textContent = !ownerId
-      ? '-- เลือก PetOwner ก่อน --'
-      : visibleCount
-        ? '-- เลือกสัตว์เลี้ยง --'
-        : '-- ไม่พบสัตว์เลี้ยง --';
-  }
-
-  ownerSearch.addEventListener('input', filterOwners);
-
-  ownerSelect.addEventListener('change', () => {
-    petSearch.value = '';
-    filterPets();
-  });
-
-  petSearch.addEventListener('input', filterPets);
-
-  form.addEventListener('reset', () => {
-    setTimeout(() => {
-      ownerSearch.value = '';
-      petSearch.value = '';
-      ownerOptions.forEach(option => option.hidden = false);
-      filterPets();
-    }, 0);
-  });
-
-  filterPets();
-});
-</script>
-
 </body>
-
 </html>
