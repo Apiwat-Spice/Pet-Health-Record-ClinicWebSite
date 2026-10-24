@@ -220,6 +220,32 @@ async function getReceiptPageData(selectedVisitId) {
   };
 }
 
+async function getCreateReceipt(req, res) {
+  try {
+    const data = await getReceiptPageData(req.query.visit_id);
+    const success = req.session?.receiptSuccess;
+    const error = req.session?.receiptError;
+
+    if (req.session) {
+      delete req.session.receiptSuccess;
+      delete req.session.receiptError;
+    }
+
+    return res.render('Appointments/ReceiptCreate', {
+      user: getUser(req),
+      activePage: 'receipt',
+      success,
+      error,
+      ...data,
+    });
+  } catch (error) {
+    console.error('Load create receipt error:', error);
+    return res
+      .status(500)
+      .send('ไม่สามารถโหลดหน้าสร้าง Receipt ได้: ' + error.message);
+  }
+}
+
 async function getReceipt(req, res) {
   try {
     const data = await getReceiptPageData(req.query.visit_id);
@@ -324,7 +350,10 @@ async function saveReceipt(req, res) {
       req.session.receiptSuccess =
         'บันทึก Receipt และปรับปรุงคลังสินค้าเรียบร้อยแล้ว';
     }
-    return res.redirect('/receipt?visit_id=' + encodeURIComponent(visitId));
+    return res.redirect(
+      '/receipt/create' +
+        (visitId ? '?visit_id=' + encodeURIComponent(visitId) : ''),
+    );
   } catch (error) {
     console.error('Save receipt error:', error);
     if (req.session) {
@@ -381,6 +410,7 @@ async function updatePaymentStatus(req, res) {
 module.exports = {
   requireRole,
   getReceipt,
+  getCreateReceipt,
   saveReceipt,
   updatePaymentStatus,
 };
