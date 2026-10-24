@@ -170,15 +170,52 @@
           </div>
           <div class="modal-body">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label for="createPetId" class="form-label">สัตว์เลี้ยง <span class="text-danger">*</span></label>
-                <select name="pet_id" id="createPetId" class="form-select" required>
-                  <option value="">-- เลือกสัตว์เลี้ยง --</option>
-                  <% pets.forEach(p => { %>
-                  <option value="<%= p.pet_id %>"><%= p.pet_name %></option>
-                  <% }) %>
-                </select>
-              </div>
+              
+<div class="col-md-6">
+  <label for="createPetOwnerSearch" class="form-label">
+    ค้นหา PetOwner <span class="text-danger">*</span>
+  </label>
+  <input
+    type="text"
+    id="createPetOwnerSearch"
+    class="form-control mb-2"
+    placeholder="ค้นหาชื่อ นามสกุล หรือ Username..."
+    autocomplete="off"
+  >
+  <select name="pet_owner_id" id="createPetOwnerId" class="form-select" required>
+    <option value="">-- เลือก PetOwner --</option>
+    <% (petOwners || []).forEach(o => { %>
+      <option
+        value="<%= o.pet_owner_id %>"
+        data-search="<%= `${o.first_name} ${o.last_name} ${o.username}`.toLowerCase() %>"
+      ><%= o.first_name %> <%= o.last_name %> (@<%= o.username %>)</option>
+    <% }) %>
+  </select>
+</div>
+<div class="col-md-6">
+  <label for="createPetSearch" class="form-label">
+    ค้นหาสัตว์เลี้ยง <span class="text-danger">*</span>
+  </label>
+  <input
+    type="text"
+    id="createPetSearch"
+    class="form-control mb-2"
+    placeholder="ค้นหาชื่อสัตว์เลี้ยง..."
+    autocomplete="off"
+  >
+  <select name="pet_id" id="createPetId" class="form-select" required disabled>
+    <option value="">-- เลือก PetOwner ก่อน --</option>
+    <% (pets || []).forEach(p => { %>
+      <option
+        value="<%= p.pet_id %>"
+        data-owner-id="<%= p.pet_owner_id %>"
+        data-search="<%= p.pet_name.toLowerCase() %>"
+      ><%= p.pet_name %></option>
+    <% }) %>
+  </select>
+  <div class="form-text">เลือก PetOwner ก่อนเพื่อกรองสัตว์เลี้ยงของเจ้าของรายนั้น</div>
+</div>
+
               <div class="col-md-6">
                 <label for="createVetId" class="form-label">สัตวแพทย์ <span class="text-danger">*</span></label>
                 <select name="vet_id" id="createVetId" class="form-select" required>
@@ -691,6 +728,85 @@ document.addEventListener('DOMContentLoaded', () => {
     dateInput.disabled = true;
     timeInput.disabled = true;
   });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const ownerSearch = document.getElementById('createPetOwnerSearch');
+  const ownerSelect = document.getElementById('createPetOwnerId');
+  const petSearch = document.getElementById('createPetSearch');
+  const petSelect = document.getElementById('createPetId');
+  const form = document.getElementById('createAppointmentForm');
+
+  const ownerOptions = Array.from(ownerSelect.options).slice(1);
+  const petOptions = Array.from(petSelect.options).slice(1);
+
+  function filterOwners() {
+    const keyword = ownerSearch.value.trim().toLowerCase();
+    const currentValue = ownerSelect.value;
+    let selectedStillVisible = false;
+
+    ownerOptions.forEach(option => {
+      const matches = option.dataset.search.includes(keyword);
+      option.hidden = !matches;
+
+      if (option.value === currentValue && matches) {
+        selectedStillVisible = true;
+      }
+    });
+
+    if (currentValue && !selectedStillVisible) {
+      ownerSelect.value = '';
+      filterPets();
+    }
+  }
+
+  function filterPets() {
+    const ownerId = ownerSelect.value;
+    const keyword = petSearch.value.trim().toLowerCase();
+    let visibleCount = 0;
+
+    petOptions.forEach(option => {
+      const matchesOwner = ownerId &&
+        option.dataset.ownerId === ownerId;
+      const matchesName = option.dataset.search.includes(keyword);
+      const visible = Boolean(matchesOwner && matchesName);
+
+      option.hidden = !visible;
+
+      if (visible) visibleCount++;
+    });
+
+    petSelect.value = '';
+    petSelect.disabled = !ownerId;
+
+    petSelect.options[0].textContent = !ownerId
+      ? '-- เลือก PetOwner ก่อน --'
+      : visibleCount
+        ? '-- เลือกสัตว์เลี้ยง --'
+        : '-- ไม่พบสัตว์เลี้ยง --';
+  }
+
+  ownerSearch.addEventListener('input', filterOwners);
+
+  ownerSelect.addEventListener('change', () => {
+    petSearch.value = '';
+    filterPets();
+  });
+
+  petSearch.addEventListener('input', filterPets);
+
+  form.addEventListener('reset', () => {
+    setTimeout(() => {
+      ownerSearch.value = '';
+      petSearch.value = '';
+      ownerOptions.forEach(option => option.hidden = false);
+      filterPets();
+    }, 0);
+  });
+
+  filterPets();
 });
 </script>
 

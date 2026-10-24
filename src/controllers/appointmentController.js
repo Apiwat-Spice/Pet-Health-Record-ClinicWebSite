@@ -167,6 +167,13 @@ exports.showAppointments = async (req, res) => {
 
     if (vetError) throw vetError;
 
+    const { data: petOwners, error: petOwnersError } = await supabase
+      .from('pet_owners')
+      .select('pet_owner_id, username, first_name, last_name')
+      .order('first_name', { ascending: true });
+
+    if (petOwnersError) throw petOwnersError;
+
     const { data: busyAppointments, error: busyError } = await supabase
       .from('appointments')
       .select(
@@ -179,7 +186,7 @@ exports.showAppointments = async (req, res) => {
 
     const { data: pets, error: petsError } = await supabase
       .from('pets')
-      .select('pet_id, pet_name')
+      .select('pet_id, pet_name, pet_owner_id')
       .order('pet_name', { ascending: true });
 
     if (petsError) throw petsError;
@@ -209,6 +216,7 @@ exports.showAppointments = async (req, res) => {
       vets: vets || [],
       busyAppointments: busyAppointments || [],
       pets: pets || [],
+      petOwners: petOwners || [],
       error: req.query.error || null,
       success: req.query.success || null,
     });
@@ -302,27 +310,26 @@ exports.createAppointment = async (req, res) => {
   }
 
   try {
-    const { pet_id, vet_id, appointment_datetime, type, title, detail } =
-      req.body;
+    const {
+      pet_owner_id,
+      pet_id,
+      vet_id,
+      appointment_datetime,
+      type,
+      title,
+      detail,
+    } = req.body;
 
+    const petOwnerId = parsePositiveInteger(pet_owner_id);
     const petId = parsePositiveInteger(pet_id);
     const vetId = parsePositiveInteger(vet_id);
     const dateTime = parseAppointmentDateTime(appointment_datetime);
 
-    console.log({
-      pet_id,
-      petId,
-      vet_id,
-      vetId,
-      appointment_datetime,
-      dateTime,
-    });
-
-    if (!petId || !vetId || !dateTime) {
+    if (!petOwnerId || !petId || !vetId || !dateTime) {
       return redirectWithMessage(
         res,
         'error',
-        'กรุณาตรวจสอบสัตว์เลี้ยง สัตวแพทย์ และวันเวลานัด โดยเลือกเวลาเป็นช่วงละ 30 นาที',
+        'กรุณาเลือก PetOwner, สัตว์เลี้ยง สัตวแพทย์ และวันเวลานัดให้ถูกต้อง',
       );
     }
     const appointmentDate = new Date(dateTime.dateTime);
@@ -340,14 +347,19 @@ exports.createAppointment = async (req, res) => {
 
     const { data: pet, error: petError } = await supabase
       .from('pets')
-      .select('pet_id')
+      .select('pet_id, pet_owner_id')
       .eq('pet_id', petId)
+      .eq('pet_owner_id', petOwnerId)
       .maybeSingle();
 
     if (petError) throw petError;
 
     if (!pet) {
-      return redirectWithMessage(res, 'error', 'ไม่พบสัตว์เลี้ยงที่เลือก');
+      return redirectWithMessage(
+        res,
+        'error',
+        'ไม่พบสัตว์เลี้ยงหรือสัตว์เลี้ยงไม่ตรงกับ PetOwner ที่เลือก',
+      );
     }
 
     const vet = await getActiveVet(vetId);
