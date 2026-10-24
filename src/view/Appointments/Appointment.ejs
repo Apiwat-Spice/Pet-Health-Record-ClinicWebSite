@@ -189,10 +189,32 @@
                 </select>
               </div>
               <div class="col-md-6">
-                <label for="createDateTime" class="form-label">วันและเวลานัด <span class="text-danger">*</span></label>
-                <input type="datetime-local" name="appointment_datetime" id="createDateTime" class="form-control" required>
-                <div class="form-text">เลือกวันและเวลาตั้งแต่ปัจจุบันเป็นต้นไป</div>
-              </div>
+  <label for="createAppointmentDate" class="form-label">วันที่นัด <span class="text-danger">*</span></label>
+  <input type="date" name="appointment_date" id="createAppointmentDate" class="form-control" required>
+</div>
+<div class="col-md-6">
+  <label for="createAppointmentTime" class="form-label">เวลานัด <span class="text-danger">*</span></label>
+  <select name="appointment_time" id="createAppointmentTime" class="form-select" required>
+    <option value="">-- เลือกเวลานัด --</option>
+    <option value="09:00">09:00 น.</option>
+    <option value="09:30">09:30 น.</option>
+    <option value="10:00">10:00 น.</option>
+    <option value="10:30">10:30 น.</option>
+    <option value="11:00">11:00 น.</option>
+    <option value="11:30">11:30 น.</option>
+    <option value="12:00">12:00 น.</option>
+    <option value="12:30">12:30 น.</option>
+    <option value="13:00">13:00 น.</option>
+    <option value="13:30">13:30 น.</option>
+    <option value="14:00">14:00 น.</option>
+    <option value="14:30">14:30 น.</option>
+    <option value="15:00">15:00 น.</option>
+    <option value="15:30">15:30 น.</option>
+    <option value="16:00">16:00 น.</option>
+    <option value="16:30">16:30 น.</option>
+  </select>
+  <div class="form-text">เลือกเวลานัดได้ตั้งแต่ 09:00–16:30 น. ทุก 30 นาที</div>
+</div>
               <div class="col-md-6">
                 <label for="createType" class="form-label">ประเภทนัดหมาย</label>
                 <select name="type" id="createType" class="form-select">
@@ -624,6 +646,54 @@ const busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || 
       });
     });
   </script>
+  
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('createAppointmentForm');
+  const dateInput = document.getElementById('createAppointmentDate');
+  const timeInput = document.getElementById('createAppointmentTime');
+
+  const today = new Date();
+  const localToday = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0')
+  ].join('-');
+
+  dateInput.min = localToday;
+
+  form.addEventListener('submit', (event) => {
+    if (!dateInput.value || !timeInput.value) {
+      event.preventDefault();
+      return;
+    }
+
+    const selectedDateTime = `${dateInput.value}T${timeInput.value}`;
+    const selected = new Date(selectedDateTime);
+    const now = new Date();
+
+    if (selected < now) {
+      event.preventDefault();
+      alert('กรุณาเลือกวันและเวลานัดตั้งแต่ปัจจุบันเป็นต้นไป');
+      return;
+    }
+
+    let hiddenInput = form.querySelector('[name="appointment_datetime"]');
+
+    if (!hiddenInput) {
+      hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'appointment_datetime';
+      form.appendChild(hiddenInput);
+    }
+
+    hiddenInput.value = selectedDateTime;
+    dateInput.disabled = true;
+    timeInput.disabled = true;
+  });
+});
+</script>
+
 </body>
 
 </html>
