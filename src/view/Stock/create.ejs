@@ -105,17 +105,16 @@
             <div class="card-body p-4">
               <div class="row g-3">
                 <div class="col-md-4">
-                  <label for="quantity" class="form-label">จำนวนคงเหลือ <span class="required">*</span></label>
+                  <label for="quantity" class="form-label">จำนวน <span class="required">*</span></label>
                   <input type="number" id="quantity" name="quantity" class="form-control" min="0" step="1" value="<%= formData.quantity ?? 0 %>" required>
                 </div>
                 <div class="col-md-4">
-                  <label for="price" class="form-label">ราคาต่อหน่วย (บาท) <span class="required">*</span></label>
+                  <label for="price" class="form-label">ราคาขาย <span class="required">*</span></label>
                   <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" value="<%= formData.price ?? 0 %>" required>
                 </div>
                 <div class="col-md-4">
-                  <label for="buy_unit" class="form-label">จำนวนต่อหน่วยซื้อ <span class="required">*</span></label>
+                  <label for="buy_unit" class="form-label">ราคาที่ซื้อ <span class="required">*</span></label>
                   <input type="number" id="buy_unit" name="buy_unit" class="form-control" min="0" step="0.01" value="<%= formData.buy_unit ?? 0 %>" required>
-                  <div class="form-text">ตัวอย่าง ซื้อ 1 กล่อง มี 10 ชิ้น ให้กรอก 10</div>
                 </div>
               </div>
             </div>
