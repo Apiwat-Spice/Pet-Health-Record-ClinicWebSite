@@ -144,7 +144,7 @@ exports.detail = async (req, res) => {
     const user = getUser(req);
 
     if (!['vet', 'clinic'].includes(role)) {
-      return res.status(403).send('ไม่มีสิทธิ์เข้าถึงหน้านี้');
+      return res.status(403).send('ไม่มีสิทธิ์เข้าถึงหน้านี้1');
     }
 
     const { data: appointment, error } = await supabase

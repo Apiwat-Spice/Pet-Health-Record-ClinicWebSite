@@ -52,13 +52,13 @@
                   <input id="petAmount" name="pet_amount" type="number" class="form-control" min="1" step="1" value="<%= room.pet_amount || 1 %>" required>
                   <div class="form-text">ต้องเป็นจำนวนเต็มมากกว่า 0</div>
                 </div>
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                   <label for="status" class="form-label">สถานะห้อง <span class="text-danger">*</span></label>
                   <select id="status" name="status" class="form-select" required>
                     <option value="not_full" <%= room.status === 'full' ? '' : 'selected' %>>ยังไม่เต็ม</option>
                     <option value="full" <%= room.status === 'full' ? 'selected' : '' %>>เต็ม</option>
                   </select>
-                </div>
+                </div> -->
                 <div class="col-12">
                   <label for="detail" class="form-label">รายละเอียดเพิ่มเติม</label>
                   <textarea id="detail" name="detail" class="form-control" rows="4" placeholder="ข้อมูลเพิ่มเติมเกี่ยวกับห้อง"><%= room.detail || '' %></textarea>

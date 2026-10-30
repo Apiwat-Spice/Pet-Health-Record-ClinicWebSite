@@ -1,8 +1,15 @@
-
 const express = require('express');
 const router = express.Router();
 const ipdController = require('../controllers/ipdController');
-const { requireClinic } = require('../controllers/memberController');
+
+// Require Clinic และ Clinic Staff
+function requireClinic(req, res, next) {
+  const user = req.user || req.session?.user || req.session?.account;
+  if (!user || !['clinic', 'clinic_staff','vet'].includes(user.role)) {
+    return res.status(403).send('ไม่มีสิทธิ์เข้าถึงหน้านี้');
+  }
+  next();
+}
 
 // Room
 router.get('/rooms', requireClinic, ipdController.listRooms);
@@ -14,8 +21,7 @@ router.get('/rooms/:id', requireClinic, ipdController.roomDetail);
 router.get('/admit-plans', requireClinic, ipdController.listAdmitPlans);
 router.get('/admit-plans/create', requireClinic, ipdController.showCreateAdmitPlan);
 router.post('/admit-plans/create', requireClinic, ipdController.createAdmitPlan);
-
-
 router.post('/admit-plans/:id/check-in', requireClinic, ipdController.checkIn);
 router.post('/admit-plans/:id/check-out', requireClinic, ipdController.checkOut);
+
 module.exports = router;

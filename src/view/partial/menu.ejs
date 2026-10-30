@@ -1,64 +1,106 @@
 <aside class="col-md-3 col-lg-2 bg-white min-vh-100 border-end p-3">
   <h6 class="text-muted mb-3">MENU</h6>
   <div class="list-group">
-    <a href="/dashboard" class="list-group-item list-group-item-action <%= activePage === 'dashboard' ? 'active' : '' %>"><i class="fa-regular fa-compass me-1"></i> Dashboard</a>
-    <% if (user.role === 'clinic') { %>
+    <a href="/dashboard" class="list-group-item list-group-item-action <%= activePage === 'dashboard' ? 'active' : '' %>">
+      <i class="fa-regular fa-compass me-1"></i> Dashboard
+    </a>
+
+    <% if (['clinic', 'clinic_staff', 'vet'].includes(user.role)) { %>
       <% const petsOpen = ['Pets', 'Pet_Owners'].includes(activePage); %>
-      <a href="#petsMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= petsOpen ? 'true' : 'false' %>" aria-controls="petsMenu"><span><i class="fa-solid fa-paw me-1"></i> Pets</span><i class="fa-solid fa-chevron-down small"></i></a>
+      <a href="#petsMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= petsOpen ? 'true' : 'false' %>" aria-controls="petsMenu">
+        <span><i class="fa-solid fa-paw me-1"></i> Pets</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
       <div class="collapse <%= petsOpen ? 'show' : '' %>" id="petsMenu">
-        <a href="/pets" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pets' ? 'active' : '' %>"><i class="fa-solid fa-dog me-1"></i> Pets</a>
-        <a href="/pet-owners" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pet_Owners' ? 'active' : '' %>"><i class="fa-solid fa-user me-1"></i> Pet Owners</a>
+        <a href="/pets" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pets' ? 'active' : '' %>">
+          <i class="fa-solid fa-dog me-1"></i> Pets
+        </a>
+        <a href="/pet-owners" class="list-group-item list-group-item-action ps-5 <%= activePage === 'Pet_Owners' ? 'active' : '' %>">
+          <i class="fa-solid fa-user me-1"></i> Pet Owners
+        </a>
       </div>
     <% } %>
-    <% if (['clinic','clinic_staff'].includes(user.role)) { %>
-      <% const appointmentOpen = ['appointments','visit-records','receipt'].includes(activePage); %>
-      <a href="#appointmentMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= appointmentOpen ? 'true' : 'false' %>" aria-controls="appointmentMenu"><span><i class="fa-solid fa-calendar-check me-1"></i> Appointment</span><i class="fa-solid fa-chevron-down small"></i></a>
+
+    <% if (['clinic', 'clinic_staff'].includes(user.role)) { %>
+      <% const appointmentOpen = ['appointments', 'visit-records', 'receipt'].includes(activePage); %>
+      <a href="#appointmentMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= appointmentOpen ? 'true' : 'false' %>" aria-controls="appointmentMenu">
+        <span><i class="fa-solid fa-calendar-check me-1"></i> Appointment</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
       <div class="collapse <%= appointmentOpen ? 'show' : '' %>" id="appointmentMenu">
-        <a href="/appointments" class="list-group-item list-group-item-action ps-5 <%= activePage === 'appointments' ? 'active' : '' %>"><i class="fa-solid fa-calendar-check me-1"></i> Appointment</a>
-        <a href="/visit-records" class="list-group-item list-group-item-action ps-5 <%= activePage === 'visit-records' ? 'active' : '' %>"><i class="fa-solid fa-file-medical me-1"></i> Visit Record</a>
-        <a href="/receipt" class="list-group-item list-group-item-action ps-5 <%= activePage === 'receipt' ? 'active' : '' %>"><i class="fa-solid fa-receipt me-1"></i> Receipt</a>
-      </div>
-      <% const stockOpen = ['stock-overview','stock-categories'].includes(activePage); %>
-      <a href="#stockMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= stockOpen ? 'true' : 'false' %>" aria-controls="stockMenu"><span><i class="fa-solid fa-boxes-stacked me-1"></i> Stock</span><i class="fa-solid fa-chevron-down small"></i></a>
-      <div class="collapse <%= stockOpen ? 'show' : '' %>" id="stockMenu">
-        <a href="/stock/overview" class="list-group-item list-group-item-action ps-5 <%= activePage === 'stock-overview' ? 'active' : '' %>"><i class="fa-solid fa-box me-1"></i> Stock Overview</a>
-        
+        <a href="/appointments" class="list-group-item list-group-item-action ps-5 <%= activePage === 'appointments' ? 'active' : '' %>">
+          <i class="fa-solid fa-calendar-check me-1"></i> Appointment
+        </a>
+        <a href="/visit-records" class="list-group-item list-group-item-action ps-5 <%= activePage === 'visit-records' ? 'active' : '' %>">
+          <i class="fa-solid fa-file-medical me-1"></i> Visit Record
+        </a>
+        <a href="/receipt" class="list-group-item list-group-item-action ps-5 <%= activePage === 'receipt' ? 'active' : '' %>">
+          <i class="fa-solid fa-receipt me-1"></i> Receipt
+        </a>
       </div>
 
-<% const ipdOpen = ['ipd-room-list', 'ipd-room-create', 'admit-plans', 'admit-plan-form'].includes(activePage); %>
-<a href="#ipdMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= ipdOpen ? 'true' : 'false' %>" aria-controls="ipdMenu">
-  <span><i class="fa-solid fa-bed me-1"></i> IPD-Rooms</span>
-  <i class="fa-solid fa-chevron-down small"></i>
-</a>
-<div class="collapse <%= ipdOpen ? 'show' : '' %>" id="ipdMenu">
-  <a href="/ipd/rooms" class="list-group-item list-group-item-action ps-5 <%= activePage === 'ipd-room-list' ? 'active' : '' %>">
-    <i class="fa-solid fa-list me-1"></i> Room List
-  </a>
-  <a href="/ipd/rooms/create" class="list-group-item list-group-item-action ps-5 <%= activePage === 'ipd-room-create' ? 'active' : '' %>">
-    <i class="fa-solid fa-plus me-1"></i> Add Room
-  </a>
-  <a href="/ipd/admit-plans" class="list-group-item list-group-item-action ps-5 <%= ['admit-plans', 'admit-plan-form'].includes(activePage) ? 'active' : '' %>">
-    <i class="fa-solid fa-calendar-plus me-1"></i> Admit Plans
-  </a>
-</div>
-    <% } %>
-    <% if (['vet','clinic'].includes(user.role)) { %>
-      <a href="/treatments" class="list-group-item list-group-item-action <%= activePage === 'treatments' ? 'active' : '' %>"><i class="fa-solid fa-file-medical me-1"></i> Treatment</a>
-    <% } %>
-    <% if (user.role === 'clinic') { %>
-      <% const memberOpen = ['clinic-staff','clinic-staff-form','vets','vet-form'].includes(activePage); %>
-      <a href="#memberMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= memberOpen ? 'true' : 'false' %>" aria-controls="memberMenu"><span><i class="fa-solid fa-users-gear me-1"></i> Add Member</span><i class="fa-solid fa-chevron-down small"></i></a>
-      <div class="collapse <%= memberOpen ? 'show' : '' %>" id="memberMenu">
-        <a href="/members/clinic-staff" class="list-group-item list-group-item-action ps-5 <%= ['clinic-staff','clinic-staff-form'].includes(activePage) ? 'active' : '' %>"><i class="fa-solid fa-user-tie me-1"></i> Clinic Staff</a>
-        <a href="/members/vets" class="list-group-item list-group-item-action ps-5 <%= ['vets','vet-form'].includes(activePage) ? 'active' : '' %>"><i class="fa-solid fa-user-doctor me-1"></i> Vet</a>
+      <% const stockOpen = ['stock-overview', 'stock-categories'].includes(activePage); %>
+      <a href="#stockMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= stockOpen ? 'true' : 'false' %>" aria-controls="stockMenu">
+        <span><i class="fa-solid fa-boxes-stacked me-1"></i> Stock</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
+      <div class="collapse <%= stockOpen ? 'show' : '' %>" id="stockMenu">
+        <a href="/stock/overview" class="list-group-item list-group-item-action ps-5 <%= activePage === 'stock-overview' ? 'active' : '' %>">
+          <i class="fa-solid fa-box me-1"></i> Stock Overview
+        </a>
       </div>
     <% } %>
+
+    <% if (['clinic', 'clinic_staff', 'vet'].includes(user.role)) { %>
+      <% const ipdOpen = ['ipd-room-list', 'ipd-room-create', 'admit-plans', 'admit-plan-form'].includes(activePage); %>
+      <a href="#ipdMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= ipdOpen ? 'true' : 'false' %>" aria-controls="ipdMenu">
+        <span><i class="fa-solid fa-bed me-1"></i> IPD-Rooms</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
+      <div class="collapse <%= ipdOpen ? 'show' : '' %>" id="ipdMenu">
+        <a href="/ipd/rooms" class="list-group-item list-group-item-action ps-5 <%= activePage === 'ipd-room-list' ? 'active' : '' %>">
+          <i class="fa-solid fa-list me-1"></i> Room List
+        </a>
+        <a href="/ipd/rooms/create" class="list-group-item list-group-item-action ps-5 <%= activePage === 'ipd-room-create' ? 'active' : '' %>">
+          <i class="fa-solid fa-plus me-1"></i> Add Room
+        </a>
+        <a href="/ipd/admit-plans" class="list-group-item list-group-item-action ps-5 <%= ['admit-plans', 'admit-plan-form'].includes(activePage) ? 'active' : '' %>">
+          <i class="fa-solid fa-calendar-plus me-1"></i> Admit Plans
+        </a>
+      </div>
+    <% } %>
+
+    <% if (['clinic', 'vet'].includes(user.role)) { %>
+      <a href="/treatments" class="list-group-item list-group-item-action <%= activePage === 'treatments' ? 'active' : '' %>">
+        <i class="fa-solid fa-file-medical me-1"></i> Treatment
+      </a>
+    <% } %>
+
+    <% if (user.role === 'clinic') { %>
+      <% const memberOpen = ['clinic-staff', 'clinic-staff-form', 'vets', 'vet-form'].includes(activePage); %>
+      <a href="#memberMenu" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="<%= memberOpen ? 'true' : 'false' %>" aria-controls="memberMenu">
+        <span><i class="fa-solid fa-users-gear me-1"></i> Add Member</span>
+        <i class="fa-solid fa-chevron-down small"></i>
+      </a>
+      <div class="collapse <%= memberOpen ? 'show' : '' %>" id="memberMenu">
+        <a href="/members/clinic-staff" class="list-group-item list-group-item-action ps-5 <%= ['clinic-staff', 'clinic-staff-form'].includes(activePage) ? 'active' : '' %>">
+          <i class="fa-solid fa-user-tie me-1"></i> Clinic Staff
+        </a>
+        <a href="/members/vets" class="list-group-item list-group-item-action ps-5 <%= ['vets', 'vet-form'].includes(activePage) ? 'active' : '' %>">
+          <i class="fa-solid fa-user-doctor me-1"></i> Vet
+        </a>
+      </div>
+    <% } %>
+
     <a href="/settings" class="list-group-item list-group-item-action <%= activePage === 'settings' ? 'active' : '' %>">
-  <i class="fa-solid fa-gear me-1"></i> Settings
-</a>
-    <a href="/logout" class="list-group-item list-group-item-action text-danger"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+      <i class="fa-solid fa-gear me-1"></i> Settings
+    </a>
+    <a href="/logout" class="list-group-item list-group-item-action text-danger">
+      <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+    </a>
   </div>
 </aside>
+
 <script>
 (() => {
   const menus = [
@@ -66,13 +108,14 @@
     { id: 'appointmentMenu', key: 'menu-closed:appointmentMenu' },
     { id: 'stockMenu', key: 'menu-closed:stockMenu' },
     { id: 'ipdMenu', key: 'menu-closed:ipdMenu' },
-    { id: 'vaccineMenu', key: 'menu-closed:vaccineMenu' },
     { id: 'memberMenu', key: 'menu-closed:memberMenu' }
   ];
+
   menus.forEach(({ id, key }) => {
     const el = document.getElementById(id);
     const toggler = document.querySelector(`[href="#${id}"]`);
     if (!el || !toggler) return;
+
     if (el.querySelector('.list-group-item.active')) {
       el.classList.add('show');
       toggler.setAttribute('aria-expanded', 'true');
@@ -81,6 +124,7 @@
       el.classList.remove('show');
       toggler.setAttribute('aria-expanded', 'false');
     }
+
     el.addEventListener('hidden.bs.collapse', () => localStorage.setItem(key, '1'));
     el.addEventListener('shown.bs.collapse', () => localStorage.removeItem(key));
   });

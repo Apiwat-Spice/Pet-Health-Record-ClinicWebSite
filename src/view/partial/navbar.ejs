@@ -4,9 +4,16 @@
             <i class="fa-solid fa-house-medical"></i>
             WebClinic
         </a>
-        <div class="text-white">
-            <i class="fa-solid fa-user"></i>
+        <div class="text-white d-flex align-items-center">
+            <i class="fa-solid fa-user me-2"></i>
             <%= user?.email || 'ไม่พบข้อมูลผู้ใช้' %>
+            <% if (user?.role === 'vet') { %>
+                <span class="badge bg-success ms-2">Vet</span>
+            <% } else if (user?.role === 'clinic_staff') { %>
+                <span class="badge bg-warning text-dark ms-2">Clinic Staff</span>
+            <% } else if (user?.role === 'clinic') { %>
+                <span class="badge bg-light text-primary ms-2">Clinic</span>
+            <% } %>
             <a href="/logout" class="btn btn-light btn-sm ms-3">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 Logout

@@ -63,13 +63,33 @@
                     <option value="2" <%= member && Number(member.vet_class) === 2 ? 'selected' : '' %>>Class 2</option>
                   </select>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="status">Status</label>
-                  <select id="status" name="status" class="form-select">
-                    <option value="active" <%= !member || member.status === 'active' ? 'selected' : '' %>>Active</option>
-                    <option value="inactive" <%= member && member.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
-                  </select>
-                </div>
+<% if (member && member.vet_id) { %>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Account Status</label>
+    <div class="border rounded-3 p-3 bg-light">
+      <div class="form-check form-switch d-flex align-items-center justify-content-between ps-0 mb-0">
+        <div>
+          <label class="form-check-label fw-semibold" for="status">
+            สถานะบัญชี
+          </label>
+          <div class="small text-muted" id="statusText">
+            <%= member.status === 'active' ? 'บัญชีกำลังใช้งาน' : 'บัญชีถูกปิดใช้งาน' %>
+          </div>
+        </div>
+        <input
+          class="form-check-input ms-3"
+          type="checkbox"
+          role="switch"
+          id="status"
+          name="status"
+          value="active"
+          style="width: 3em; height: 1.5em; cursor: pointer;"
+          <%= member.status === 'active' ? 'checked' : '' %>
+        >
+      </div>
+    </div>
+  </div>
+<% } %>
                 <div class="col-12">
                   <label class="form-label" for="profileImage">รูปโปรไฟล์</label>
                   <input id="profileImage" name="profile_image" type="file" accept="image/*" class="form-control">
@@ -112,5 +132,17 @@
       });
     }
   </script>
+<script>
+  const statusToggle = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+
+  if (statusToggle && statusText) {
+    statusToggle.addEventListener('change', () => {
+      statusText.textContent = statusToggle.checked
+        ? 'บัญชีกำลังใช้งาน'
+        : 'บัญชีถูกปิดใช้งาน';
+    });
+  }
+</script>
 </body>
 </html>

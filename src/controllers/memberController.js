@@ -10,7 +10,7 @@ function currentUser(req) {
 function requireClinic(req, res, next) {
   const user = currentUser(req);
   if (!user || user.role !== 'clinic') {
-    return res.status(403).send('ไม่มีสิทธิ์เข้าถึงหน้านี้');
+    return res.status(403).send('ไม่มีสิทธิ์เข้าถึงหน้านี้2');
   }
   next();
 }
@@ -186,9 +186,7 @@ exports.create = (type) => async (req, res) => {
       .toLowerCase();
     const password = String(req.body.password || '');
     const phone = String(req.body.phone || '').trim() || null;
-    const status = ['active', 'inactive'].includes(req.body.status)
-      ? req.body.status
-      : 'active';
+    const status = 'active';
 
     if (!first_name || !last_name || !email || password.length < 8) {
       return renderError(
@@ -297,9 +295,7 @@ exports.update = (type) => async (req, res) => {
       .trim()
       .toLowerCase();
     const phone = String(req.body.phone || '').trim() || null;
-    const status = ['active', 'inactive'].includes(req.body.status)
-      ? req.body.status
-      : 'active';
+const status = req.body.status === 'active' ? 'active' : 'inactive';
 
     if (!first_name || !last_name || !email) {
       return renderError(
