@@ -399,6 +399,7 @@ exports.createPetOwner = async (req, res) => {
     subdistrict: req.body.subdistrict?.trim() || '',
     district: req.body.district?.trim() || '',
     province: req.body.province?.trim() || '',
+    phone: req.body.phone?.trim() || '',
     postal_code: req.body.postal_code?.trim() || '',
   };
 
@@ -465,7 +466,7 @@ exports.createPetOwner = async (req, res) => {
           (error, result) => {
             if (error) return reject(error);
             resolve(result);
-          }
+          },
         );
 
         Readable.from(req.file.buffer).pipe(stream);
@@ -487,6 +488,7 @@ exports.createPetOwner = async (req, res) => {
       p_district: old.district || null,
       p_province: old.province || null,
       p_postal_code: old.postal_code || null,
+      p_phone: old.phone || null,
       p_profile_image_url: uploadedImage?.secure_url || null,
       p_profile_image_public_id: uploadedImage?.public_id || null,
     });
@@ -496,7 +498,6 @@ exports.createPetOwner = async (req, res) => {
     }
 
     return res.redirect('/pet-owners?success=created');
-
   } catch (error) {
     console.error('Create PetOwner error:', error);
 
@@ -509,8 +510,9 @@ exports.createPetOwner = async (req, res) => {
     }
 
     if (error.code === '23505') {
-      const isEmailDuplicate =
-        error.message?.includes('users_pet_owner_email_unique');
+      const isEmailDuplicate = error.message?.includes(
+        'users_pet_owner_email_unique',
+      );
 
       return res.status(400).render('Pets/Pet_Owner_Form', {
         user,
@@ -765,6 +767,7 @@ exports.updatePetOwner = async (req, res) => {
     address_line: req.body.address_line?.trim() || '',
     subdistrict: req.body.subdistrict?.trim() || '',
     district: req.body.district?.trim() || '',
+    phone: req.body.phone?.trim() || '',
     province: req.body.province?.trim() || '',
     postal_code: req.body.postal_code?.trim() || '',
   };
@@ -787,12 +790,7 @@ exports.updatePetOwner = async (req, res) => {
     errors.last_name = 'กรุณากรอกนามสกุล';
   }
 
-  const allowedGenders = [
-    'male',
-    'female',
-    'other',
-    'prefer_not_to_say',
-  ];
+  const allowedGenders = ['male', 'female', 'other', 'prefer_not_to_say'];
 
   if (old.gender && !allowedGenders.includes(old.gender)) {
     errors.gender = 'กรุณาเลือกเพศให้ถูกต้อง';
@@ -836,10 +834,7 @@ exports.updatePetOwner = async (req, res) => {
       return renderForm(owner, errors, null);
     }
 
-    const emailExists = await checkPetOwnerEmail(
-      old.email,
-      current.user_id
-    );
+    const emailExists = await checkPetOwnerEmail(old.email, current.user_id);
 
     if (emailExists) {
       return renderForm(
@@ -847,7 +842,7 @@ exports.updatePetOwner = async (req, res) => {
         {
           email: 'อีเมลนี้ถูกใช้งานโดย Pet Owner แล้ว',
         },
-        null
+        null,
       );
     }
 
@@ -855,13 +850,13 @@ exports.updatePetOwner = async (req, res) => {
       uploadedImage = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            folder: 'Pet/PetProfile',
+            folder: 'PetOwner/PetOwnerProfile',
             resource_type: 'image',
           },
           (error, result) => {
             if (error) return reject(error);
             resolve(result);
-          }
+          },
         );
 
         Readable.from(req.file.buffer).pipe(stream);
@@ -886,6 +881,7 @@ exports.updatePetOwner = async (req, res) => {
       address_line: old.address_line || null,
       subdistrict: old.subdistrict || null,
       district: old.district || null,
+      phone: old.phone || null,
       province: old.province || null,
       postal_code: old.postal_code || null,
     };
@@ -897,8 +893,7 @@ exports.updatePetOwner = async (req, res) => {
 
     if (user.role === 'admin') {
       updateData.verified = req.body.verified === 'true';
-      updateData.verified_id_card =
-        req.body.verified_id_card === 'true';
+      updateData.verified_id_card = req.body.verified_id_card === 'true';
     }
 
     const { error: updateError } = await supabase
@@ -911,16 +906,13 @@ exports.updatePetOwner = async (req, res) => {
     // ลบรูปเดิมหลังจากอัปเดตข้อมูลสำเร็จแล้ว
     if (uploadedImage && current.profile_image_public_id) {
       try {
-        await deleteCloudinaryImage(
-          current.profile_image_public_id
-        );
+        await deleteCloudinaryImage(current.profile_image_public_id);
       } catch (deleteError) {
         console.error('Delete old Cloudinary image error:', deleteError);
       }
     }
 
     return res.redirect('/pet-owners?success=updated');
-
   } catch (error) {
     console.error('Update PetOwner error:', error);
 
@@ -954,12 +946,11 @@ exports.updatePetOwner = async (req, res) => {
           : {
               username: 'Username นี้มีในระบบแล้ว',
             },
-        null
+        null,
       );
     }
 
-    let message =
-      'ไม่สามารถแก้ไขข้อมูลเจ้าของสัตว์เลี้ยงได้';
+    let message = 'ไม่สามารถแก้ไขข้อมูลเจ้าของสัตว์เลี้ยงได้';
 
     if (error.code === '23503') {
       message = 'ข้อมูลที่เชื่อมโยงไม่ถูกต้อง';
@@ -973,7 +964,7 @@ exports.updatePetOwner = async (req, res) => {
         profile_image_url: current?.profile_image_url || null,
       },
       {},
-      message
+      message,
     );
   }
 };
