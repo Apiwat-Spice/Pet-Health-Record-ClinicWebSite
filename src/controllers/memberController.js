@@ -181,19 +181,63 @@ exports.create = (type) => async (req, res) => {
   try {
     const first_name = String(req.body.first_name || '').trim();
     const last_name = String(req.body.last_name || '').trim();
-    const email = String(req.body.email || '')
-      .trim()
-      .toLowerCase();
+    const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
+    const confirm_password = String(req.body.confirm_password || '');
     const phone = String(req.body.phone || '').trim() || null;
     const status = 'active';
 
-    if (!first_name || !last_name || !email || password.length < 8) {
+    const formData = {
+      ...req.body,
+      first_name,
+      last_name,
+      email,
+      phone,
+      status
+    };
+
+    if (!first_name || !last_name || !email || !password) {
       return renderError(
         res,
         cfg,
-        { ...req.body, first_name, last_name, email, phone, status },
-        'กรุณากรอกชื่อ นามสกุล อีเมล และรหัสผ่านอย่างน้อย 8 ตัวอักษร',
+        formData,
+        'กรุณากรอกชื่อ นามสกุล อีเมล และรหัสผ่านให้ครบถ้วน'
+      );
+    }
+
+    if (password.length < 8) {
+      return renderError(
+        res,
+        cfg,
+        formData,
+        'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'
+      );
+    }
+
+    if (password !== confirm_password) {
+      return renderError(
+        res,
+        cfg,
+        formData,
+        'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน'
+      );
+    }
+
+    if (phone && !/^[0-9]{10}$/.test(phone)) {
+      return renderError(
+        res,
+        cfg,
+        formData,
+        'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก'
+      );
+    }
+
+    if (type === 'vets' && ![1, 2].includes(Number(req.body.vet_class))) {
+      return renderError(
+        res,
+        cfg,
+        formData,
+        'กรุณาเลือก Vet Class ให้ถูกต้อง'
       );
     }
 
@@ -204,26 +248,23 @@ exports.create = (type) => async (req, res) => {
         email,
         password_hash: await bcrypt.hash(password, 10),
         verified: true,
-        status,
+        status
       })
       .select('user_id')
       .single();
 
+    if (userError) {
+      if (userError.code === '23505' && userError.message.includes('users_email_key')) {
+        return renderError(
+          res,
+          cfg,
+          formData,
+          'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น'
+        );
+      }
 
-if (userError) {
-  if (userError.code === '23505' && userError.message.includes('users_email_key')) {
-    return renderError(
-      res,
-      cfg,
-      { ...req.body, first_name, last_name, email, phone, status },
-      'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น',
-    );
-  }
-
-  throw userError;
-}
-
-createdUserId = account.user_id;
+      throw userError;
+    }
 
     createdUserId = account.user_id;
 
@@ -238,11 +279,11 @@ createdUserId = account.user_id;
       phone,
       status,
       profile_image_url: uploaded?.secure_url || null,
-      profile_image_public_id: uploaded?.public_id || null,
+      profile_image_public_id: uploaded?.public_id || null
     };
 
     if (type === 'vets') {
-      profile.vet_class = Number(req.body.vet_class) === 2 ? 2 : 1;
+      profile.vet_class = Number(req.body.vet_class);
     }
 
     const { error: profileError } = await supabase
@@ -252,6 +293,7 @@ createdUserId = account.user_id;
     if (profileError) throw profileError;
 
     return res.redirect(`/members/${type}?success=created`);
+
   } catch (error) {
     console.error(error);
 
@@ -267,7 +309,9 @@ createdUserId = account.user_id;
       res,
       cfg,
       { ...req.body },
-      error.code === '23505' ? 'อีเมลนี้ถูกใช้งานแล้ว' : 'เพิ่มสมาชิกไม่สำเร็จ',
+      error.code === '23505'
+        ? 'อีเมลนี้ถูกใช้งานแล้ว'
+        : 'เพิ่มสมาชิกไม่สำเร็จ'
     );
   }
 };

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -8,141 +7,274 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
-    @media (max-width: 576px) {
-      main { padding: 1rem !important; }
-    }
+    body { background: #f5f7fb; }
+    main { min-height: 100vh; }
+    .form-card { border: 0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.05); }
+    .section-title { font-size: 1rem; font-weight: 700; color: #344054; }
+    .section-icon { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; background: #eaf2ff; color: #0d6efd; border-radius: 10px; }
+    .form-label { font-weight: 600; color: #475467; }
+    .form-control, .form-select { min-height: 44px; }
+    .password-toggle { min-width: 46px; }
+    .required { color: #dc3545; }
+    @media(max-width:576px) { main { padding: 1rem !important; } }
   </style>
 </head>
-<body class="bg-light">
+<body>
   <%- include('../partial/navbar') %>
   <div class="container-fluid">
     <div class="row">
       <%- include('../partial/menu') %>
       <main class="col-md-9 col-lg-10 p-4">
-        <div class="mb-4">
-          <h2 class="fw-bold"><i class="fa-solid fa-user-doctor text-primary me-2"></i>Vet Form</h2>
-          <p class="text-muted mb-0">กรอกข้อมูลสมาชิกเพื่อเพิ่มหรือแก้ไข</p>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+          <div>
+            <div class="text-muted small mb-1">Members / Vets</div>
+            <h3 class="fw-bold mb-1">
+              <i class="fa-solid fa-user-doctor text-primary me-2"></i>
+              <%= member && member.vet_id ? 'Edit Vet' : 'Add Vet' %>
+            </h3>
+            <p class="text-muted mb-0">จัดการข้อมูลบัญชีและรายละเอียดสัตวแพทย์</p>
+          </div>
+          <a href="/members/vets" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> กลับ
+          </a>
         </div>
+
         <% if (locals.error) { %>
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <div class="alert alert-danger alert-dismissible fade show">
             <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
         <% } %>
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-4">
-            <form method="POST" enctype="multipart/form-data" action="/members/vets/<%= member && member.vet_id ? member.vet_id + '/edit' : 'create' %>">
+
+        <form id="memberForm" method="POST" enctype="multipart/form-data" action="<%= member && member.vet_id ? '/members/vets/' + member.vet_id + '/edit' : '/members/vets/create' %>">
+          <div class="card form-card mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center gap-2 mb-4">
+                <span class="section-icon"><i class="fa-solid fa-user"></i></span>
+                <div>
+                  <div class="section-title">Personal Information</div>
+                  <small class="text-muted">ข้อมูลส่วนตัวของสัตวแพทย์</small>
+                </div>
+              </div>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label" for="firstName">ชื่อ <span class="text-danger">*</span></label>
-                  <input id="firstName" name="first_name" class="form-control" maxlength="100" value="<%= member ? member.first_name || '' : '' %>" required>
+                  <label class="form-label" for="firstName">ชื่อ <span class="required">*</span></label>
+                  <input id="firstName" name="first_name" class="form-control" maxlength="100" value="<%= member ? member.first_name || '' : '' %>" placeholder="กรอกชื่อ" required>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="lastName">นามสกุล <span class="text-danger">*</span></label>
-                  <input id="lastName" name="last_name" class="form-control" maxlength="100" value="<%= member ? member.last_name || '' : '' %>" required>
+                  <label class="form-label" for="lastName">นามสกุล <span class="required">*</span></label>
+                  <input id="lastName" name="last_name" class="form-control" maxlength="100" value="<%= member ? member.last_name || '' : '' %>" placeholder="กรอกนามสกุล" required>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
-                  <input id="email" name="email" type="email" class="form-control" maxlength="255" value="<%= member ? member.email || '' : '' %>" required>
+                  <label class="form-label" for="email">Email <span class="required">*</span></label>
+                  <input id="email" name="email" type="email" class="form-control" maxlength="255" value="<%= member ? member.email || '' : '' %>" placeholder="example@email.com" autocomplete="email" required>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="phone">Phone</label>
-                  <input id="phone" name="phone" type="tel" class="form-control" maxlength="20" value="<%= member ? member.phone || '' : '' %>">
+                  <label class="form-label" for="phone">Phone Number</label>
+                  <input id="phone" name="phone" type="tel" class="form-control" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" value="<%= member ? member.phone || '' : '' %>" placeholder="0812345678">
+                  <div class="form-text">กรอกตัวเลข 10 หลัก โดยไม่ต้องใส่ขีด</div>
                 </div>
-                <% if (!member || !member.vet_id) { %>
-                  <div class="col-md-6">
-                    <label class="form-label" for="password">รหัสผ่านเริ่มต้น <span class="text-danger">*</span></label>
-                    <input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password" required>
-                    <div class="form-text">อย่างน้อย 8 ตัวอักษร</div>
-                  </div>
-                <% } %>
                 <div class="col-md-6">
-                  <label class="form-label" for="vetClass">Vet Class <span class="text-danger">*</span></label>
+                  <label class="form-label" for="vetClass">Vet Class <span class="required">*</span></label>
                   <select id="vetClass" name="vet_class" class="form-select" required>
                     <option value="1" <%= !member || Number(member.vet_class) === 1 ? 'selected' : '' %>>Class 1</option>
                     <option value="2" <%= member && Number(member.vet_class) === 2 ? 'selected' : '' %>>Class 2</option>
                   </select>
                 </div>
-<% if (member && member.vet_id) { %>
-  <div class="col-md-6">
-    <label class="form-label fw-semibold">Account Status</label>
-    <div class="border rounded-3 p-3 bg-light">
-      <div class="form-check form-switch d-flex align-items-center justify-content-between ps-0 mb-0">
-        <div>
-          <label class="form-check-label fw-semibold" for="status">
-            สถานะบัญชี
-          </label>
-          <div class="small text-muted" id="statusText">
-            <%= member.status === 'active' ? 'บัญชีกำลังใช้งาน' : 'บัญชีถูกปิดใช้งาน' %>
+              </div>
+            </div>
           </div>
-        </div>
-        <input
-          class="form-check-input ms-3"
-          type="checkbox"
-          role="switch"
-          id="status"
-          name="status"
-          value="active"
-          style="width: 3em; height: 1.5em; cursor: pointer;"
-          <%= member.status === 'active' ? 'checked' : '' %>
-        >
-      </div>
-    </div>
-  </div>
-<% } %>
-                <div class="col-12">
-                  <label class="form-label" for="profileImage">รูปโปรไฟล์</label>
-                  <input id="profileImage" name="profile_image" type="file" accept="image/*" class="form-control">
-                  <div class="form-text">รองรับไฟล์รูปภาพ ขนาดไม่เกิน 5 MB <% if (member && member.profile_image_url) { %>เมื่อเลือกรูปใหม่ ระบบจะเปลี่ยนรูปเดิม<% } %></div>
-                  <div class="mt-3">
-                    <img id="profilePreview" src="<%= member && member.profile_image_url ? member.profile_image_url : '' %>" alt="Profile preview" class="rounded border <%= member && member.profile_image_url ? '' : 'd-none' %>" style="width:110px;height:110px;object-fit:cover">
+
+          <% if (!member || !member.vet_id) { %>
+            <div class="card form-card mb-4">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                  <span class="section-icon"><i class="fa-solid fa-lock"></i></span>
+                  <div>
+                    <div class="section-title">Account Password</div>
+                    <small class="text-muted">กำหนดรหัสผ่านเริ่มต้นสำหรับบัญชี</small>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label" for="password">รหัสผ่าน <span class="required">*</span></label>
+                    <div class="input-group">
+                      <input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password" placeholder="อย่างน้อย 8 ตัวอักษร" required>
+                      <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="password" aria-label="แสดงรหัสผ่าน">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="confirmPassword">ยืนยันรหัสผ่าน <span class="required">*</span></label>
+                    <div class="input-group">
+                      <input id="confirmPassword" name="confirm_password" type="password" class="form-control" minlength="8" autocomplete="new-password" placeholder="กรอกรหัสผ่านอีกครั้ง" required>
+                      <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="confirmPassword" aria-label="แสดงรหัสผ่าน">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                    <div id="passwordMessage" class="form-text"></div>
                   </div>
                 </div>
               </div>
-              <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="/members/vets" class="btn btn-light">ยกเลิก</a>
-                <button type="submit" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>บันทึกข้อมูล</button>
+            </div>
+          <% } %>
+
+          <div class="card form-card mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center gap-2 mb-4">
+                <span class="section-icon"><i class="fa-solid fa-image"></i></span>
+                <div>
+                  <div class="section-title">Profile Image</div>
+                  <small class="text-muted">รูปโปรไฟล์ของสัตวแพทย์</small>
+                </div>
               </div>
-            </form>
+              <div class="row align-items-start g-3">
+                <div class="col-md-7">
+                  <label class="form-label" for="profileImage">เลือกรูปภาพ</label>
+                  <input id="profileImage" name="profile_image" type="file" accept="image/jpeg,image/png,image/webp" class="form-control">
+                  <div class="form-text">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5 MB</div>
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label d-block">Preview</label>
+                  <img id="profilePreview" src="<%= member && member.profile_image_url ? member.profile_image_url : '' %>" alt="Profile preview" class="rounded-3 border <%= member && member.profile_image_url ? '' : 'd-none' %>" style="width:120px;height:120px;object-fit:cover">
+                  <div id="emptyPreview" class="rounded-3 border bg-light d-flex flex-column align-items-center justify-content-center text-muted <%= member && member.profile_image_url ? 'd-none' : '' %>" style="width:120px;height:120px">
+                    <i class="fa-solid fa-user fa-2x mb-2"></i>
+                    <small>No Image</small>
+                  </div>
+                  <% if (member && member.profile_image_url) { %>
+                    <div class="form-text mt-2">เมื่อเลือกรูปใหม่ ระบบจะเปลี่ยนรูปเดิม</div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <% if (member && member.vet_id) { %>
+            <div class="card form-card mb-4">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <span class="section-icon"><i class="fa-solid fa-toggle-on"></i></span>
+                  <div>
+                    <div class="section-title">Account Status</div>
+                    <small class="text-muted">เปิดหรือปิดการใช้งานบัญชีนี้</small>
+                  </div>
+                </div>
+                <div class="border rounded-3 p-3 bg-light">
+                  <div class="form-check form-switch d-flex align-items-center justify-content-between ps-0 mb-0">
+                    <div>
+                      <label class="form-check-label fw-semibold" for="status">สถานะบัญชี</label>
+                      <div class="small text-muted" id="statusText">
+                        <%= member.status === 'active' ? 'บัญชีกำลังใช้งาน' : 'บัญชีถูกปิดใช้งาน' %>
+                      </div>
+                    </div>
+                    <input class="form-check-input ms-3" type="checkbox" role="switch" id="status" name="status" value="active" style="width:3em;height:1.5em;cursor:pointer" <%= member.status === 'active' ? 'checked' : '' %>>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="/members/vets" class="btn btn-light border px-4">ยกเลิก</a>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกข้อมูล
+            </button>
+          </div>
+        </form>
       </main>
     </div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+      phoneInput.addEventListener('input', () => {
+        phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+      });
+    }
+
+    document.querySelectorAll('[data-toggle-password]').forEach(button => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.togglePassword);
+        const icon = button.querySelector('i');
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        icon.classList.toggle('fa-eye', !show);
+        icon.classList.toggle('fa-eye-slash', show);
+      });
+    });
+
+    const memberForm = document.getElementById('memberForm');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const passwordMessage = document.getElementById('passwordMessage');
+
+    function checkPassword() {
+      if (!password || !confirmPassword) return true;
+      const matched = password.value === confirmPassword.value;
+      confirmPassword.setCustomValidity(matched ? '' : 'รหัสผ่านไม่ตรงกัน');
+      passwordMessage.textContent = confirmPassword.value
+        ? (matched ? 'รหัสผ่านตรงกัน' : 'รหัสผ่านไม่ตรงกัน')
+        : 'กรอกรหัสผ่านให้ตรงกันทั้งสองช่อง';
+      passwordMessage.className = confirmPassword.value
+        ? (matched ? 'form-text text-success' : 'form-text text-danger')
+        : 'form-text text-muted';
+      return matched;
+    }
+
+    if (password && confirmPassword) {
+      password.addEventListener('input', checkPassword);
+      confirmPassword.addEventListener('input', checkPassword);
+    }
+
+    if (memberForm) {
+      memberForm.addEventListener('submit', event => {
+        if (!checkPassword()) {
+          event.preventDefault();
+          confirmPassword.reportValidity();
+        }
+      });
+    }
+
     const imageInput = document.getElementById('profileImage');
     const preview = document.getElementById('profilePreview');
+    const emptyPreview = document.getElementById('emptyPreview');
+
     if (imageInput && preview) {
       imageInput.addEventListener('change', () => {
         const file = imageInput.files[0];
         if (!file) return;
-        if (!file.type.startsWith('image/')) {
-          alert('กรุณาเลือกไฟล์รูปภาพ');
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          alert('รองรับเฉพาะไฟล์ JPG, PNG และ WEBP');
           imageInput.value = '';
           return;
         }
+
         if (file.size > 5 * 1024 * 1024) {
           alert('รูปภาพต้องมีขนาดไม่เกิน 5 MB');
           imageInput.value = '';
           return;
         }
+
         preview.src = URL.createObjectURL(file);
         preview.classList.remove('d-none');
+        if (emptyPreview) emptyPreview.classList.add('d-none');
+      });
+    }
+
+    const statusToggle = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    if (statusToggle && statusText) {
+      statusToggle.addEventListener('change', () => {
+        statusText.textContent = statusToggle.checked
+          ? 'บัญชีกำลังใช้งาน'
+          : 'บัญชีถูกปิดใช้งาน';
       });
     }
   </script>
-<script>
-  const statusToggle = document.getElementById('status');
-  const statusText = document.getElementById('statusText');
-
-  if (statusToggle && statusText) {
-    statusToggle.addEventListener('change', () => {
-      statusText.textContent = statusToggle.checked
-        ? 'บัญชีกำลังใช้งาน'
-        : 'บัญชีถูกปิดใช้งาน';
-    });
-  }
-</script>
 </body>
 </html>
