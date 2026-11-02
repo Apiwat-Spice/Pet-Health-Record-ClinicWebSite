@@ -181,7 +181,9 @@ exports.create = (type) => async (req, res) => {
   try {
     const first_name = String(req.body.first_name || '').trim();
     const last_name = String(req.body.last_name || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
+    const email = String(req.body.email || '')
+      .trim()
+      .toLowerCase();
     const password = String(req.body.password || '');
     const confirm_password = String(req.body.confirm_password || '');
     const phone = String(req.body.phone || '').trim() || null;
@@ -193,7 +195,7 @@ exports.create = (type) => async (req, res) => {
       last_name,
       email,
       phone,
-      status
+      status,
     };
 
     if (!first_name || !last_name || !email || !password) {
@@ -201,7 +203,7 @@ exports.create = (type) => async (req, res) => {
         res,
         cfg,
         formData,
-        'กรุณากรอกชื่อ นามสกุล อีเมล และรหัสผ่านให้ครบถ้วน'
+        'กรุณากรอกชื่อ นามสกุล อีเมล และรหัสผ่านให้ครบถ้วน',
       );
     }
 
@@ -210,7 +212,7 @@ exports.create = (type) => async (req, res) => {
         res,
         cfg,
         formData,
-        'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'
+        'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
       );
     }
 
@@ -219,7 +221,7 @@ exports.create = (type) => async (req, res) => {
         res,
         cfg,
         formData,
-        'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน'
+        'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน',
       );
     }
 
@@ -228,16 +230,29 @@ exports.create = (type) => async (req, res) => {
         res,
         cfg,
         formData,
-        'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก'
+        'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก',
       );
     }
 
     if (type === 'vets' && ![1, 2].includes(Number(req.body.vet_class))) {
+      return renderError(res, cfg, formData, 'กรุณาเลือก Vet Class ให้ถูกต้อง');
+    }
+
+    const { data: duplicateUsers, error: duplicateError } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('email', email)
+      .in('role', ['clinic_staff', 'vet'])
+      .limit(1);
+
+    if (duplicateError) throw duplicateError;
+
+    if (duplicateUsers && duplicateUsers.length > 0) {
       return renderError(
         res,
         cfg,
         formData,
-        'กรุณาเลือก Vet Class ให้ถูกต้อง'
+        'อีเมลนี้ถูกใช้งานโดย Clinic Staff หรือ Vet แล้ว กรุณาใช้อีเมลอื่น',
       );
     }
 
@@ -248,18 +263,21 @@ exports.create = (type) => async (req, res) => {
         email,
         password_hash: await bcrypt.hash(password, 10),
         verified: true,
-        status
+        status,
       })
       .select('user_id')
       .single();
 
     if (userError) {
-      if (userError.code === '23505' && userError.message.includes('users_email_key')) {
+      if (
+        userError.code === '23505' &&
+        userError.message.includes('users_email_key')
+      ) {
         return renderError(
           res,
           cfg,
           formData,
-          'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น'
+          'อีเมลนี้ถูกใช้งานโดย Clinic Staff หรือ Vet แล้ว กรุณาใช้อีเมลอื่น',
         );
       }
 
@@ -279,7 +297,7 @@ exports.create = (type) => async (req, res) => {
       phone,
       status,
       profile_image_url: uploaded?.secure_url || null,
-      profile_image_public_id: uploaded?.public_id || null
+      profile_image_public_id: uploaded?.public_id || null,
     };
 
     if (type === 'vets') {
@@ -293,7 +311,6 @@ exports.create = (type) => async (req, res) => {
     if (profileError) throw profileError;
 
     return res.redirect(`/members/${type}?success=created`);
-
   } catch (error) {
     console.error(error);
 
@@ -309,9 +326,7 @@ exports.create = (type) => async (req, res) => {
       res,
       cfg,
       { ...req.body },
-      error.code === '23505'
-        ? 'อีเมลนี้ถูกใช้งานแล้ว'
-        : 'เพิ่มสมาชิกไม่สำเร็จ'
+      error.code === '23505' ? 'อีเมลนี้ถูกใช้งานแล้ว' : 'เพิ่มสมาชิกไม่สำเร็จ',
     );
   }
 };
@@ -339,7 +354,7 @@ exports.update = (type) => async (req, res) => {
       .trim()
       .toLowerCase();
     const phone = String(req.body.phone || '').trim() || null;
-const status = req.body.status === 'active' ? 'active' : 'inactive';
+    const status = req.body.status === 'active' ? 'active' : 'inactive';
 
     if (!first_name || !last_name || !email) {
       return renderError(
@@ -436,7 +451,9 @@ exports.remove = (type) => async (req, res) => {
 
     if (sendNotification) {
       if (!account.email) {
-        return res.status(400).send('ไม่พบอีเมลของสมาชิก ไม่สามารถส่งการแจ้งเตือนได้');
+        return res
+          .status(400)
+          .send('ไม่พบอีเมลของสมาชิก ไม่สามารถส่งการแจ้งเตือนได้');
       }
 
       const { sendMemberRemovedNotice } = require('../../config/mailer');
@@ -445,7 +462,7 @@ exports.remove = (type) => async (req, res) => {
         account.email,
         member.first_name,
         member.last_name,
-        cfg.title
+        cfg.title,
       );
     }
 
@@ -458,7 +475,7 @@ exports.remove = (type) => async (req, res) => {
 
     if (member.profile_image_public_id) {
       await deleteImage(member.profile_image_public_id).catch((error) =>
-        console.error('ลบรูปจาก Cloudinary ไม่สำเร็จ:', error.message)
+        console.error('ลบรูปจาก Cloudinary ไม่สำเร็จ:', error.message),
       );
     }
 
