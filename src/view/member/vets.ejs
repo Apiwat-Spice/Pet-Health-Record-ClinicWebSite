@@ -18,10 +18,11 @@
     .table th {
       vertical-align: middle;
     }
+
     .text-bg-purple {
-  color: #fff !important;
-  background-color: #6f42c1 !important;
-}
+      color: #fff !important;
+      background-color: #6f42c1 !important;
+    }
   </style>
 </head>
 
@@ -72,7 +73,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% if (!members || members.length === 0) { %>
+                  <% if (!members || members.length===0) { %>
                   <tr>
                     <td colspan="7" class="text-center text-muted py-5">
                       <i class="fa-solid fa-users fa-2x mb-2 d-block"></i>
@@ -80,14 +81,23 @@
                     </td>
                   </tr>
                   <% } else { %>
-                  <% members.forEach(m => { %>
+                  <% members.forEach(m=> { %>
                   <tr data-member-row="<%= [m.first_name, m.last_name, m.email, m.phone, m.status].join(' ').toLowerCase() %>">
-                    <td><%= m.vet_id %></td>
                     <td>
-                      <div class="fw-semibold"><%= m.first_name %> <%= m.last_name %></div>
+                      <%= m.vet_id %>
                     </td>
-                    <td><%= m.email || '-' %></td>
-                    <td><%= m.phone || '-' %></td>
+                    <td>
+                      <div class="fw-semibold">
+                        <%= m.first_name %>
+                        <%= m.last_name %>
+                      </div>
+                    </td>
+                    <td>
+                      <%= m.email || '-' %>
+                    </td>
+                    <td>
+                      <%= m.phone || '-' %>
+                    </td>
                     <td>
                       <span class="badge <%= Number(m.vet_class) === 1 ? 'text-bg-primary' : 'text-bg-purple' %>">
                         Class <%= m.vet_class %>
@@ -102,11 +112,17 @@
                       <a class="btn btn-sm btn-outline-primary" href="/members/vets/<%= m.vet_id %>/edit">
                         <i class="fa-solid fa-pen"></i>
                       </a>
-                      <form data-delete-form class="d-inline" method="POST" action="/members/vets/<%= m.vet_id %>/delete">
-                        <button class="btn btn-sm btn-outline-danger" type="submit">
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                      </form>
+                      <form data-delete-form
+  data-name="<%= m.first_name %> <%= m.last_name %>"
+  data-email="<%= m.email || '' %>"
+  data-role="Vet"
+  class="d-inline"
+  method="POST"
+  action="/members/vets/<%= m.vet_id %>/delete">
+  <button class="btn btn-sm btn-outline-danger" type="button" data-delete-trigger>
+    <i class="fa-solid fa-trash"></i>
+  </button>
+</form>
                     </td>
                   </tr>
                   <% }) %>
@@ -119,16 +135,110 @@
       </main>
     </div>
   </div>
+
+<div class="modal fade" id="deleteMemberModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="fa-solid fa-trash me-2"></i>ยืนยันการลบสมาชิก
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">คุณกำลังจะลบสมาชิกออกจากระบบ WebClinic</p>
+        <div class="bg-light rounded p-3 mb-3">
+          <div class="d-flex gap-2 mb-2">
+            <div>ชื่อ</div>
+            <div class="fw-bold" id="deleteMemberName">-</div>
+          </div>
+          <div class="d-flex gap-2 mb-2">
+            <div>อีเมล</div>
+            <div class="fw-bold" id="deleteMemberEmail">-</div>
+          </div>
+          <div class="d-flex gap-2">
+            <div>ตำแหน่ง</div>
+            <div class="fw-bold" id="deleteMemberRole">-</div>
+          </div>
+        </div>
+        <div class="alert alert-warning small">
+          <i class="fa-solid fa-triangle-exclamation me-1"></i>
+          เมื่อยืนยันแล้ว บัญชีสมาชิกจะถูกลบออกจากระบบ
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="sendDeleteEmail">
+          <label class="form-check-label" for="sendDeleteEmail">
+            <strong>ส่งอีเมลแจ้งเตือน</strong>
+            <div class="text-muted small">ระบบจะส่งอีเมลแจ้งการลบบัญชีไปยังพนักงาน</div>
+            <div class="fw-bold text-primary" id="deleteEmailRecipient">-</div>
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="confirmDelete">
+          <label class="form-check-label text-danger fw-semibold" for="confirmDelete">
+            ฉันยืนยันว่าต้องการลบสมาชิกคนนี้จริง ๆ
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteButton" disabled>
+          <i class="fa-solid fa-trash me-1"></i> ยืนยันการลบ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.querySelectorAll('[data-delete-form]').forEach(form => {
-      form.addEventListener('submit', e => {
-        if (!confirm('ยืนยันการลบสมาชิกคนนี้?')) {
-          e.preventDefault();
-        }
+    let selectedDeleteForm = null;
+
+    const deleteModalElement = document.getElementById('deleteMemberModal');
+    const deleteModal = new bootstrap.Modal(deleteModalElement);
+    const sendDeleteEmail = document.getElementById('sendDeleteEmail');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+
+    document.querySelectorAll('[data-delete-trigger]').forEach(button => {
+      button.addEventListener('click', () => {
+        selectedDeleteForm = button.closest('[data-delete-form]');
+        document.getElementById('deleteMemberName').textContent = selectedDeleteForm.dataset.name;
+        document.getElementById('deleteMemberEmail').textContent = selectedDeleteForm.dataset.email || 'ไม่พบอีเมล';
+        document.getElementById('deleteEmailRecipient').textContent = selectedDeleteForm.dataset.email || 'ไม่พบอีเมล';
+        document.getElementById('deleteMemberRole').textContent = selectedDeleteForm.dataset.role;
+        sendDeleteEmail.checked = false;
+        confirmDelete.checked = false;
+        confirmDeleteButton.disabled = true;
+        sendDeleteEmail.disabled = !selectedDeleteForm.dataset.email;
+        deleteModal.show();
       });
     });
+
+    confirmDelete.addEventListener('change', () => {
+      confirmDeleteButton.disabled = !confirmDelete.checked;
+    });
+
+    confirmDeleteButton.addEventListener('click', () => {
+      if (!selectedDeleteForm || !confirmDelete.checked) return;
+
+      const notificationInput = document.createElement('input');
+      notificationInput.type = 'hidden';
+      notificationInput.name = 'send_notification';
+      notificationInput.value = sendDeleteEmail.checked ? 'true' : 'false';
+
+      const confirmationInput = document.createElement('input');
+      confirmationInput.type = 'hidden';
+      confirmationInput.name = 'confirm_delete';
+      confirmationInput.value = 'true';
+
+      selectedDeleteForm.appendChild(notificationInput);
+      selectedDeleteForm.appendChild(confirmationInput);
+      selectedDeleteForm.submit();
+    });
+
     const search = document.getElementById('memberSearch');
+
     if (search) {
       search.addEventListener('input', () => {
         const q = search.value.trim().toLowerCase();

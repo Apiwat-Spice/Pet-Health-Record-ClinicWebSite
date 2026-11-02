@@ -364,6 +364,10 @@ exports.remove = (type) => async (req, res) => {
   if (!cfg) return res.status(404).send('ไม่พบประเภทสมาชิก');
 
   try {
+    if (req.body.confirm_delete !== 'true') {
+      return res.status(400).send('กรุณายืนยันการลบสมาชิกก่อน');
+    }
+
     const { data: member, error: findError } = await supabase
       .from(cfg.table)
       .select('*')
@@ -372,6 +376,33 @@ exports.remove = (type) => async (req, res) => {
 
     if (findError || !member) {
       return res.status(404).send('ไม่พบข้อมูลสมาชิก');
+    }
+
+    const { data: account, error: accountError } = await supabase
+      .from('users')
+      .select('user_id, email')
+      .eq('user_id', member.user_id)
+      .single();
+
+    if (accountError || !account) {
+      return res.status(404).send('ไม่พบข้อมูลบัญชีสมาชิก');
+    }
+
+    const sendNotification = req.body.send_notification === 'true';
+
+    if (sendNotification) {
+      if (!account.email) {
+        return res.status(400).send('ไม่พบอีเมลของสมาชิก ไม่สามารถส่งการแจ้งเตือนได้');
+      }
+
+      const { sendMemberRemovedNotice } = require('../../config/mailer');
+
+      await sendMemberRemovedNotice(
+        account.email,
+        member.first_name,
+        member.last_name,
+        cfg.title
+      );
     }
 
     const { error: deleteError } = await supabase
@@ -383,13 +414,13 @@ exports.remove = (type) => async (req, res) => {
 
     if (member.profile_image_public_id) {
       await deleteImage(member.profile_image_public_id).catch((error) =>
-        console.error('ลบรูปจาก Cloudinary ไม่สำเร็จ:', error.message),
+        console.error('ลบรูปจาก Cloudinary ไม่สำเร็จ:', error.message)
       );
     }
 
     res.redirect(`/members/${type}?success=deleted`);
   } catch (error) {
     console.error(error);
-    res.status(500).send('ลบสมาชิกไม่สำเร็จ');
+    res.status(500).send('ลบสมาชิกไม่สำเร็จ: ' + error.message);
   }
 };

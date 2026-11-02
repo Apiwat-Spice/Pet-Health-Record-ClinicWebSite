@@ -1,4 +1,3 @@
-
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -27,4 +26,30 @@ async function sendOtp(email, otp) {
   });
 }
 
-module.exports = { sendOtp };
+async function sendMemberRemovedNotice(email, firstName, lastName, role) {
+  const fullName = `${firstName} ${lastName}`;
+
+  return transporter.sendMail({
+    from: `"WebClinic" <${process.env.MAIL_USER}>`,
+    to: email,
+    subject: 'แจ้งเตือนการลบบัญชีสมาชิก WebClinic',
+    text: `เรียน ${fullName}\n\nบัญชี WebClinic ของคุณในตำแหน่ง ${role} ถูกลบออกจากระบบโดยผู้ดูแลคลินิกแล้ว\n\nหากคุณมีข้อสงสัย กรุณาติดต่อคลินิกของคุณ\n\nWebClinic`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:24px;border:1px solid #ddd;border-radius:12px">
+        <h2 style="color:#315f85">WebClinic</h2>
+        <p>เรียน ${fullName}</p>
+        <p>ขอแจ้งให้ทราบว่าบัญชีสมาชิกของคุณถูกลบออกจากระบบแล้ว</p>
+        <div style="background:#f8d7da;padding:16px;border-radius:8px;color:#842029">
+          <strong>รายละเอียดบัญชีที่ถูกลบ</strong>
+          <p class="mb-1">ชื่อ: ${fullName}</p>
+          <p class="mb-1">ตำแหน่ง: ${role}</p>
+          <p class="mb-0">อีเมล: ${email}</p>
+        </div>
+        <p style="margin-top:20px">หากคุณมีข้อสงสัย กรุณาติดต่อคลินิกของคุณ</p>
+        <p style="color:#777">อีเมลฉบับนี้ส่งโดยระบบ WebClinic อัตโนมัติ</p>
+      </div>
+    `
+  });
+}
+
+module.exports = { sendOtp, sendMemberRemovedNotice };
