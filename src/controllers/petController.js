@@ -103,7 +103,48 @@ async function deleteCloudinaryImage(publicId) {
     console.error('Delete pet image error:', error);
   }
 }
+function validatePetOwner(data) {
+  const errors = {};
 
+  if (!data.email) {
+    errors.email = 'กรุณากรอกอีเมล';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+  }
+
+  if (!data.username) errors.username = 'กรุณากรอก Username';
+  if (!data.first_name) errors.first_name = 'กรุณากรอกชื่อ';
+  if (!data.last_name) errors.last_name = 'กรุณากรอกนามสกุล';
+
+  if (data.id_card && !/^[0-9]{13}$/.test(data.id_card)) {
+    errors.id_card = 'เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก';
+  }
+
+  const allowedGenders = ['male', 'female', 'other', 'prefer_not_to_say'];
+
+  if (data.gender && !allowedGenders.includes(data.gender)) {
+    errors.gender = 'กรุณาเลือกเพศให้ถูกต้อง';
+  }
+
+  return errors;
+}
+async function checkPetOwnerEmail(email, excludeUserId = null) {
+  let query = supabase
+    .from('users')
+    .select('user_id')
+    .eq('role', 'pet_owner')
+    .ilike('email', email);
+
+  if (excludeUserId) {
+    query = query.neq('user_id', excludeUserId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) throw error;
+
+  return !!data;
+}
 // แสดงสัตว์เลี้ยงทั้งหมด
 exports.showPets = async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
@@ -341,8 +382,11 @@ exports.showCreatePetOwner = (req, res) => {
 };
 exports.createPetOwner = async (req, res) => {
   let uploadedImage = null;
-
   const user = req.session.user;
+
+  if (!user) {
+    return res.redirect('/login');
+  }
 
   const old = {
     email: req.body.email?.trim() || '',
@@ -358,11 +402,7 @@ exports.createPetOwner = async (req, res) => {
     postal_code: req.body.postal_code?.trim() || '',
   };
 
-  const errors = {};
-
-  if (!user) {
-    return res.redirect('/login');
-  }
+  const errors = validatePetOwner(old);
 
   if (!old.email) {
     errors.email = 'กรุณากรอกอีเมล';
@@ -399,6 +439,22 @@ exports.createPetOwner = async (req, res) => {
   }
 
   try {
+    const emailExists = await checkPetOwnerEmail(old.email);
+
+    if (emailExists) {
+      return res.status(400).render('Pets/Pet_Owner_Form', {
+        user,
+        activePage: 'Pet_Owners',
+        owner: null,
+        old,
+        errors: {
+          email: 'อีเมลนี้ถูกใช้งานโดย Pet Owner แล้ว',
+        },
+        error: null,
+        isAdmin: false,
+      });
+    }
+
     if (req.file) {
       uploadedImage = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -409,12 +465,13 @@ exports.createPetOwner = async (req, res) => {
           (error, result) => {
             if (error) return reject(error);
             resolve(result);
-          },
+          }
         );
 
         Readable.from(req.file.buffer).pipe(stream);
       });
     }
+
     console.log('Uploaded image URL:', uploadedImage?.secure_url);
     console.log('Uploaded image ID:', uploadedImage?.public_id);
 
@@ -439,6 +496,7 @@ exports.createPetOwner = async (req, res) => {
     }
 
     return res.redirect('/pet-owners?success=created');
+
   } catch (error) {
     console.error('Create PetOwner error:', error);
 
@@ -450,10 +508,27 @@ exports.createPetOwner = async (req, res) => {
       }
     }
 
+    if (error.code === '23505') {
+      const isEmailDuplicate =
+        error.message?.includes('users_pet_owner_email_unique');
+
+      return res.status(400).render('Pets/Pet_Owner_Form', {
+        user,
+        activePage: 'Pet_Owners',
+        owner: null,
+        old,
+        errors: isEmailDuplicate
+          ? { email: 'อีเมลนี้ถูกใช้งานโดย Pet Owner แล้ว' }
+          : { username: 'Username นี้มีในระบบแล้ว' },
+        error: null,
+        isAdmin: false,
+      });
+    }
+
     let message = 'ไม่สามารถบันทึกข้อมูล PetOwner ได้';
 
-    if (error.code === '23505' || error.code === '23503') {
-      message = 'อีเมลหรือ Username ซ้ำ หรือข้อมูลที่เชื่อมโยงไม่ถูกต้อง';
+    if (error.code === '23503') {
+      message = 'ข้อมูลที่เชื่อมโยงไม่ถูกต้อง';
     } else if (error.message?.includes('create_pet_owner')) {
       message =
         'ไม่สามารถเรียกใช้งานฟังก์ชันสร้าง PetOwner ได้ กรุณาตรวจสอบ Function ใน Supabase';
@@ -668,7 +743,9 @@ exports.showEditPetOwner = async (req, res) => {
   }
 };
 exports.updatePetOwner = async (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
+  const user = req.session.user;
+
+  if (!user) return res.redirect('/login');
 
   const petOwnerId = Number(req.params.id);
   let uploadedImage = null;
@@ -692,29 +769,44 @@ exports.updatePetOwner = async (req, res) => {
     postal_code: req.body.postal_code?.trim() || '',
   };
 
-  const errors = {};
+  const errors = validatePetOwner(old);
 
   if (!old.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(old.email)) {
     errors.email = 'กรุณากรอกอีเมลให้ถูกต้อง';
   }
-  if (!old.username) errors.username = 'กรุณากรอก Username';
-  if (!old.first_name) errors.first_name = 'กรุณากรอกชื่อ';
-  if (!old.last_name) errors.last_name = 'กรุณากรอกนามสกุล';
 
-  const allowedGenders = ['male', 'female', 'other', 'prefer_not_to_say'];
+  if (!old.username) {
+    errors.username = 'กรุณากรอก Username';
+  }
+
+  if (!old.first_name) {
+    errors.first_name = 'กรุณากรอกชื่อ';
+  }
+
+  if (!old.last_name) {
+    errors.last_name = 'กรุณากรอกนามสกุล';
+  }
+
+  const allowedGenders = [
+    'male',
+    'female',
+    'other',
+    'prefer_not_to_say',
+  ];
+
   if (old.gender && !allowedGenders.includes(old.gender)) {
     errors.gender = 'กรุณาเลือกเพศให้ถูกต้อง';
   }
 
   const renderForm = (owner, formErrors, message, status = 400) => {
     return res.status(status).render('Pets/Pet_Owner_Form', {
-      user: req.session.user,
+      user,
       activePage: 'Pet_Owners',
       owner,
       old,
       errors: formErrors,
       error: message,
-      isAdmin: req.session.user.role === 'admin',
+      isAdmin: user.role === 'admin',
     });
   };
 
@@ -726,7 +818,10 @@ exports.updatePetOwner = async (req, res) => {
       .maybeSingle();
 
     if (findError) throw findError;
-    if (!found) return res.status(404).send('ไม่พบข้อมูลเจ้าของสัตว์เลี้ยง');
+
+    if (!found) {
+      return res.status(404).send('ไม่พบข้อมูลเจ้าของสัตว์เลี้ยง');
+    }
 
     current = found;
 
@@ -737,26 +832,47 @@ exports.updatePetOwner = async (req, res) => {
       profile_image_url: current.profile_image_url,
     };
 
-    if (Object.keys(errors).length) {
+    if (Object.keys(errors).length > 0) {
       return renderForm(owner, errors, null);
+    }
+
+    const emailExists = await checkPetOwnerEmail(
+      old.email,
+      current.user_id
+    );
+
+    if (emailExists) {
+      return renderForm(
+        owner,
+        {
+          email: 'อีเมลนี้ถูกใช้งานโดย Pet Owner แล้ว',
+        },
+        null
+      );
     }
 
     if (req.file) {
       uploadedImage = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'Pet/PetProfile', resource_type: 'image' },
+          {
+            folder: 'Pet/PetProfile',
+            resource_type: 'image',
+          },
           (error, result) => {
             if (error) return reject(error);
             resolve(result);
-          },
+          }
         );
+
         Readable.from(req.file.buffer).pipe(stream);
       });
     }
 
     const { error: userError } = await supabase
       .from('users')
-      .update({ email: old.email })
+      .update({
+        email: old.email,
+      })
       .eq('user_id', current.user_id);
 
     if (userError) throw userError;
@@ -779,9 +895,10 @@ exports.updatePetOwner = async (req, res) => {
       updateData.profile_image_public_id = uploadedImage.public_id;
     }
 
-    if (req.session.user.role === 'admin') {
+    if (user.role === 'admin') {
       updateData.verified = req.body.verified === 'true';
-      updateData.verified_id_card = req.body.verified_id_card === 'true';
+      updateData.verified_id_card =
+        req.body.verified_id_card === 'true';
     }
 
     const { error: updateError } = await supabase
@@ -791,25 +908,37 @@ exports.updatePetOwner = async (req, res) => {
 
     if (updateError) throw updateError;
 
+    // ลบรูปเดิมหลังจากอัปเดตข้อมูลสำเร็จแล้ว
     if (uploadedImage && current.profile_image_public_id) {
-      await deleteCloudinaryImage(current.profile_image_public_id);
+      try {
+        await deleteCloudinaryImage(
+          current.profile_image_public_id
+        );
+      } catch (deleteError) {
+        console.error('Delete old Cloudinary image error:', deleteError);
+      }
     }
 
     return res.redirect('/pet-owners?success=updated');
+
   } catch (error) {
     console.error('Update PetOwner error:', error);
 
+    // ลบรูปใหม่เมื่อเกิดข้อผิดพลาดในการบันทึก
     if (uploadedImage?.public_id) {
-      await deleteCloudinaryImage(uploadedImage.public_id);
+      try {
+        await deleteCloudinaryImage(uploadedImage.public_id);
+      } catch (deleteError) {
+        console.error('Delete new Cloudinary image error:', deleteError);
+      }
     }
 
+    // ตรวจสอบข้อมูลซ้ำ
     if (error.code === '23505') {
-      const duplicateErrors = {};
-      if (error.message?.includes('email')) {
-        duplicateErrors.email = 'อีเมลนี้มีในระบบแล้ว';
-      } else {
-        duplicateErrors.username = 'Username นี้มีในระบบแล้ว';
-      }
+      const isEmailDuplicate =
+        error.message?.includes('users_pet_owner_email_unique') ||
+        error.message?.includes('users_email_key') ||
+        error.message?.toLowerCase().includes('email');
 
       return renderForm(
         {
@@ -818,20 +947,33 @@ exports.updatePetOwner = async (req, res) => {
           email: old.email,
           profile_image_url: current?.profile_image_url || null,
         },
-        duplicateErrors,
-        null,
+        isEmailDuplicate
+          ? {
+              email: 'อีเมลนี้ถูกใช้งานโดย Pet Owner แล้ว',
+            }
+          : {
+              username: 'Username นี้มีในระบบแล้ว',
+            },
+        null
       );
     }
 
-    return res.status(400).render('Pets/Pet_Owner_Form', {
-      user: req.session.user,
-      activePage: 'Pet_Owners',
-      owner: { ...current, ...old, email: old.email },
-      old,
-      errors: {},
-      error:
-        'ไม่สามารถแก้ไขข้อมูลเจ้าของสัตว์เลี้ยงได้ กรุณาตรวจสอบชื่อคอลัมน์ในฐานข้อมูล',
-      isAdmin: req.session.user.role === 'admin',
-    });
+    let message =
+      'ไม่สามารถแก้ไขข้อมูลเจ้าของสัตว์เลี้ยงได้';
+
+    if (error.code === '23503') {
+      message = 'ข้อมูลที่เชื่อมโยงไม่ถูกต้อง';
+    }
+
+    return renderForm(
+      {
+        ...current,
+        ...old,
+        email: old.email,
+        profile_image_url: current?.profile_image_url || null,
+      },
+      {},
+      message
+    );
   }
 };
