@@ -1,16 +1,35 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Admit Plan - WebClinic</title>
+  <title>Admit Plan - WebClinic</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Prompt', sans-serif; background: #f8f9fa; }
-    .form-card { border: 0; border-radius: 12px; }
-    .form-label { font-weight: 500; }
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f8f9fa;
+    }
+    .form-card {
+      border: 0;
+      border-radius: 12px;
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .form-error {
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    .form-error:empty {
+      display: none;
+    }
+    select.form-select {
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -21,23 +40,24 @@
       <main class="col-md-9 col-lg-10 px-md-4 py-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
           <div>
-            <h3 class="mb-1">Create Admit Plan</h3>
-            <p class="text-muted mb-0">สร้างแผนเข้าพักรักษาสัตว์เลี้ยง</p>
+            <h3 class="mb-1">
+              <%= editing ? 'Edit Admit Plan' : 'Create Admit Plan' %>
+            </h3>
+            <p class="text-muted mb-0">
+              <%= editing ? 'แก้ไขข้อมูลแผนการเข้าพักรักษาสัตว์เลี้ยง' : 'เพิ่มแผนการเข้าพักรักษาสัตว์เลี้ยง' %>
+            </p>
           </div>
           <a href="/ipd/admit-plans" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> กลับ
           </a>
         </div>
 
-        <% if (locals.error) { %>
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-circle-exclamation me-1"></i>
-            <%= error %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <form action="<%= editing ? `/ipd/admit-plans/${planId}/edit` : '/ipd/admit-plans/create' %>" method="POST" id="admitPlanForm" novalidate>
+          <div id="formError" class="alert alert-danger form-error mb-3 <%= error ? '' : 'd-none' %>" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
+            <span id="formErrorMessage"><%= error || '' %></span>
           </div>
-        <% } %>
 
-        <form action="/ipd/admit-plans/create" method="POST" id="admitPlanForm">
           <div class="card form-card shadow-sm mb-4">
             <div class="card-body p-4">
               <h5 class="mb-3"><i class="fa-solid fa-bed me-2"></i>Room Information</h5>
@@ -92,7 +112,18 @@
                 </div>
                 <div class="col-md-6">
                   <label for="check_in_time" class="form-label">Check-in Time <span class="text-danger">*</span></label>
-                  <input type="time" class="form-control" id="check_in_time" name="check_in_time" value="<%= form.check_in_time || '' %>" required>
+                  <select class="form-select" id="check_in_time" name="check_in_time" required>
+                    <option value="">-- เลือกเวลา Check-in --</option>
+                    <% for (let hour = 9; hour <= 16; hour++) { %>
+                      <% for (let minute of [0, 30]) { %>
+                        <% if (hour < 16 || minute === 0 || hour === 16 && minute === 30) { %>
+                          <% const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`; %>
+                          <option value="<%= time %>" <%= String(form.check_in_time || '').slice(0, 5) === time ? 'selected' : '' %>><%= time %></option>
+                        <% } %>
+                      <% } %>
+                    <% } %>
+                  </select>
+                  <div class="form-text">เลือกเวลาได้ทุก 30 นาที (09:00–16:30)</div>
                 </div>
                 <div class="col-md-6">
                   <label for="check_out_date" class="form-label">Check-out Date</label>
@@ -101,7 +132,18 @@
                 </div>
                 <div class="col-md-6">
                   <label for="check_out_time" class="form-label">Check-out Time</label>
-                  <input type="time" class="form-control" id="check_out_time" name="check_out_time" value="<%= form.check_out_time || '' %>">
+                  <select class="form-select" id="check_out_time" name="check_out_time">
+                    <option value="">-- เลือกเวลา Check-out --</option>
+                    <% for (let hour = 9; hour <= 16; hour++) { %>
+                      <% for (let minute of [0, 30]) { %>
+                        <% if (hour < 16 || minute === 0 || hour === 16 && minute === 30) { %>
+                          <% const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`; %>
+                          <option value="<%= time %>" <%= String(form.check_out_time || '').slice(0, 5) === time ? 'selected' : '' %>><%= time %></option>
+                        <% } %>
+                      <% } %>
+                    <% } %>
+                  </select>
+                  <div class="form-text">เลือกเวลาได้ทุก 30 นาที (09:00–16:30)</div>
                 </div>
               </div>
             </div>
@@ -124,8 +166,9 @@
 
           <div class="d-flex justify-content-end gap-2 mb-4">
             <a href="/ipd/admit-plans" class="btn btn-outline-secondary">Cancel</a>
-            <button type="submit" class="btn btn-success" id="submitBtn" <%= !rooms.length ? 'disabled' : '' %>>
-              <i class="fa-solid fa-floppy-disk me-1"></i> Save Admit Plan
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <i class="fa-solid fa-<%= editing ? 'save' : 'plus' %> me-1"></i>
+              <%= editing ? 'Save Changes' : 'Create Admit Plan' %>
             </button>
           </div>
         </form>
@@ -139,9 +182,31 @@
     const petSelect = document.getElementById('pet_id');
     const savedPetId = <%- JSON.stringify(String(form.pet_id || '')) %>;
 
+    const form = document.getElementById('admitPlanForm');
+    const formError = document.getElementById('formError');
+    const formErrorMessage = document.getElementById('formErrorMessage');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const checkInDate = document.getElementById('check_in_date');
+    const checkInTime = document.getElementById('check_in_time');
+    const checkOutDate = document.getElementById('check_out_date');
+    const checkOutTime = document.getElementById('check_out_time');
+
+    function showError(message) {
+      formErrorMessage.textContent = message;
+      formError.classList.remove('d-none');
+      formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideError() {
+      formError.classList.add('d-none');
+      formErrorMessage.textContent = '';
+    }
+
     function filterPets() {
       const ownerId = ownerSelect.value;
       const previousPetId = petSelect.value || savedPetId;
+
       petSelect.innerHTML = '<option value="">-- เลือกสัตว์เลี้ยง --</option>';
 
       pets.filter(pet => String(pet.pet_owner_id) === ownerId).forEach(pet => {
@@ -160,45 +225,72 @@
     ownerSelect.addEventListener('change', () => {
       petSelect.value = '';
       filterPets();
+      hideError();
     });
 
     filterPets();
 
-    const checkInDate = document.getElementById('check_in_date');
-    const checkOutDate = document.getElementById('check_out_date');
-    const checkOutTime = document.getElementById('check_out_time');
+    function isValidTime(time) {
+      if (!time) return false;
+      const [hour, minute] = time.split(':').map(Number);
+      const totalMinutes = hour * 60 + minute;
+      return totalMinutes >= 540 && totalMinutes <= 990 && minute % 30 === 0;
+    }
 
     function updateCheckOutMin() {
       checkOutDate.min = checkInDate.value;
+
       if (checkOutDate.value && checkOutDate.value < checkInDate.value) {
-        checkOutDate.setCustomValidity('วันออกต้องไม่อยู่ก่อนวันเข้า');
-      } else {
-        checkOutDate.setCustomValidity('');
+        showError('วัน Check-out ต้องไม่อยู่ก่อนวัน Check-in');
       }
     }
 
     checkInDate.addEventListener('change', updateCheckOutMin);
-    checkOutDate.addEventListener('change', updateCheckOutMin);
+    checkOutDate.addEventListener('change', hideError);
 
-    document.getElementById('admitPlanForm').addEventListener('submit', event => {
+    form.addEventListener('submit', event => {
+      hideError();
+
+      if (!isValidTime(checkInTime.value)) {
+        event.preventDefault();
+        showError('กรุณาเลือกเวลา Check-in ระหว่าง 09:00–16:30 โดยเลือกทุก 30 นาที');
+        return;
+      }
+
       if (Boolean(checkOutDate.value) !== Boolean(checkOutTime.value)) {
         event.preventDefault();
-        alert('หากกำหนดวันออก ต้องระบุทั้งวันที่และเวลา Check-out');
+        showError('หากกำหนดวันออก ต้องระบุทั้งวันที่และเวลา Check-out');
         return;
       }
 
-      if (checkOutDate.value && checkOutDate.value === checkInDate.value &&
-          checkOutTime.value < document.getElementById('check_in_time').value) {
+      if (checkOutTime.value && !isValidTime(checkOutTime.value)) {
         event.preventDefault();
-        alert('เวลา Check-out ต้องไม่อยู่ก่อนเวลา Check-in');
+        showError('กรุณาเลือกเวลา Check-out ระหว่าง 09:00–16:30 โดยเลือกทุก 30 นาที');
         return;
       }
 
-      const button = document.getElementById('submitBtn');
-      button.disabled = true;
-      button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';
+      if (checkOutDate.value && checkOutDate.value < checkInDate.value) {
+        event.preventDefault();
+        showError('วัน Check-out ต้องไม่อยู่ก่อนวัน Check-in');
+        return;
+      }
+
+      if (checkOutDate.value === checkInDate.value &&
+          checkOutTime.value && checkOutTime.value < checkInTime.value) {
+        event.preventDefault();
+        showError('เวลา Check-out ต้องไม่อยู่ก่อนเวลา Check-in');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';
+    });
+
+    [checkInDate, checkInTime, checkOutDate, checkOutTime].forEach(input => {
+      input.addEventListener('change', hideError);
     });
   </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

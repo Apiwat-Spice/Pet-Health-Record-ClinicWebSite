@@ -21,7 +21,8 @@ router.get('/rooms/:id', requireClinic, ipdController.roomDetail);
 router.get('/admit-plans', requireClinic, ipdController.listAdmitPlans);
 router.get('/admit-plans/create', requireClinic, ipdController.showCreateAdmitPlan);
 router.post('/admit-plans/create', requireClinic, ipdController.createAdmitPlan);
+router.get('/admit-plans/:id/edit', requireClinic, ipdController.editAdmitPlan);
+router.post('/admit-plans/:id/edit', requireClinic, ipdController.updateAdmitPlan);
 router.post('/admit-plans/:id/check-in', requireClinic, ipdController.checkIn);
 router.post('/admit-plans/:id/check-out', requireClinic, ipdController.checkOut);
-
 module.exports = router;
