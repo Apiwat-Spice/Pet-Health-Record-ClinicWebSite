@@ -15,5 +15,7 @@ function requireStockRole(req, res, next) {
 router.get('/overview', requireStockRole, stockController.getOverview);
 router.get('/create', requireStockRole, stockController.getCreate);
 router.post('/create', requireStockRole, stockController.createStock);
+router.get('/:id/edit',requireStockRole, stockController.getEdit);
+router.post('/:id/edit',requireStockRole, stockController.updateStock);
 
 module.exports = router;

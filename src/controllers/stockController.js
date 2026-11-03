@@ -11,11 +11,11 @@ async function getOverview(req, res) {
     if (error) throw error;
 
     const today = new Date().toISOString().slice(0, 10);
-    const items = (stocks || []).map(stock => ({
+    const items = (stocks || []).map((stock) => ({
       ...stock,
       current_expired: stock.expires_at
         ? stock.expires_at < today
-        : stock.expires_status === 'expired'
+        : stock.expires_status === 'expired',
     }));
 
     res.render('Stock/overview', {
@@ -23,7 +23,7 @@ async function getOverview(req, res) {
       activePage: 'stock-overview',
       stocks: items,
       success: req.session.stockSuccess || null,
-      error: req.session.stockError || null
+      error: req.session.stockError || null,
     });
 
     delete req.session.stockSuccess;
@@ -48,7 +48,7 @@ async function getCreate(req, res) {
       activePage: 'stock-overview',
       stocks: stocks || [],
       formData: {},
-      error: null
+      error: null,
     });
   } catch (error) {
     console.error('Get stock form error:', error);
@@ -69,7 +69,7 @@ async function createStock(req, res) {
     buy_unit: req.body.buy_unit,
     expires_status: req.body.expires_status,
     expires_at: req.body.expires_at || null,
-    note: String(req.body.note || '').trim()
+    note: String(req.body.note || '').trim(),
   };
 
   try {
@@ -83,7 +83,9 @@ async function createStock(req, res) {
       clinicStaffId = user.clinic_staff_id;
 
       if (!clinicStaffId) {
-        throw new Error('ไม่พบรหัส Clinic Staff ของผู้ใช้งาน ไม่สามารถทำรายการได้');
+        throw new Error(
+          'ไม่พบรหัส Clinic Staff ของผู้ใช้งาน ไม่สามารถทำรายการได้',
+        );
       }
     }
 
@@ -106,14 +108,19 @@ async function createStock(req, res) {
       !Number.isFinite(buyUnit) ||
       buyUnit < 0
     ) {
-      throw new Error('จำนวนสินค้าที่เพิ่มต้องมากกว่า 0 และราคาและหน่วยซื้อต้องไม่ติดลบ');
+      throw new Error(
+        'จำนวนสินค้าที่เพิ่มต้องมากกว่า 0 และราคาและหน่วยซื้อต้องไม่ติดลบ',
+      );
     }
 
     if (!['not_expired', 'expired'].includes(formData.expires_status)) {
       throw new Error('สถานะวันหมดอายุไม่ถูกต้อง');
     }
 
-    if (formData.expires_at && !/^\d{4}-\d{2}-\d{2}$/.test(formData.expires_at)) {
+    if (
+      formData.expires_at &&
+      !/^\d{4}-\d{2}-\d{2}$/.test(formData.expires_at)
+    ) {
       throw new Error('รูปแบบวันหมดอายุไม่ถูกต้อง');
     }
 
@@ -128,7 +135,7 @@ async function createStock(req, res) {
       }
 
       const today = new Date().toLocaleDateString('en-CA', {
-        timeZone: 'Asia/Bangkok'
+        timeZone: 'Asia/Bangkok',
       });
 
       if (formData.expires_at < today) {
@@ -138,24 +145,28 @@ async function createStock(req, res) {
       }
     }
 
-    const { data, error } = await supabase.rpc('create_stock_with_transaction', {
-      p_name: formData.name,
-      p_company: formData.company || null,
-      p_category: formData.category,
-      p_quantity: quantity,
-      p_price: price,
-      p_type_unit: formData.type_unit,
-      p_buy_unit: buyUnit,
-      p_expires_status: formData.expires_status,
-      p_expires_at: formData.expires_at,
-      p_note: formData.note || null,
-      p_clinic_staff_id: clinicStaffId,
-      p_transaction_note: 'เพิ่มสินค้าเข้าคลัง'
-    });
+    const { data, error } = await supabase.rpc(
+      'create_stock_with_transaction',
+      {
+        p_name: formData.name,
+        p_company: formData.company || null,
+        p_category: formData.category,
+        p_quantity: quantity,
+        p_price: price,
+        p_type_unit: formData.type_unit,
+        p_buy_unit: buyUnit,
+        p_expires_status: formData.expires_status,
+        p_expires_at: formData.expires_at,
+        p_note: formData.note || null,
+        p_clinic_staff_id: clinicStaffId,
+        p_transaction_note: 'เพิ่มสินค้าเข้าคลัง',
+      },
+    );
 
     if (error) throw error;
 
-    req.session.stockSuccess = 'เพิ่มสินค้าและบันทึก Transaction In เรียบร้อยแล้ว';
+    req.session.stockSuccess =
+      'เพิ่มสินค้าและบันทึก Transaction In เรียบร้อยแล้ว';
     return res.redirect('/stock/overview');
   } catch (error) {
     console.error('Create stock transaction error:', error);
@@ -174,12 +185,162 @@ async function createStock(req, res) {
       activePage: 'stock-overview',
       stocks: stocks || [],
       formData,
-      error: error.message || 'ไม่สามารถเพิ่มสินค้าได้'
+      error: error.message || 'ไม่สามารถเพิ่มสินค้าได้',
     });
+  }
+}
+
+async function getEdit(req, res) {
+  try {
+    const stockId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(stockId)) {
+      return res.status(400).send('รหัสสินค้าไม่ถูกต้อง');
+    }
+
+    const { data: stock, error } = await supabase
+      .from('stock')
+      .select('*')
+      .eq('stock_id', stockId)
+      .single();
+
+    if (error || !stock) {
+      return res.status(404).send('ไม่พบสินค้า');
+    }
+
+    const { data: stocks, error: loadError } = await supabase
+      .from('stock')
+      .select('name, company, category, type_unit')
+      .order('name', { ascending: true });
+
+    if (loadError) throw loadError;
+
+    res.render('Stock/edit', {
+      user: req.user || req.session?.user || req.session?.account,
+      activePage: 'stock-overview',
+      stock,
+      stocks: stocks || [],
+      formData: stock,
+      error: null
+    });
+
+  } catch (error) {
+    console.error('Get edit stock error:', error);
+    res.status(500).send('ไม่สามารถโหลดข้อมูลสินค้าได้');
+  }
+}
+
+async function updateStock(req, res) {
+  const user = req.user || req.session?.user || req.session?.account;
+  const stockId = Number(req.params.id);
+
+  try {
+    if (!user || !['clinic', 'clinic_staff'].includes(user.role)) {
+      return res.status(403).send('ไม่มีสิทธิ์แก้ไขสินค้า');
+    }
+
+    if (!Number.isSafeInteger(stockId)) {
+      return res.status(400).send('รหัสสินค้าไม่ถูกต้อง');
+    }
+
+    const formData = {
+      name: String(req.body.name || '').trim(),
+      company: String(req.body.company || '').trim(),
+      category: String(req.body.category || '').trim(),
+      quantity: Number(req.body.quantity),
+      price: Number(req.body.price),
+      type_unit: String(req.body.type_unit || '').trim(),
+      buy_unit: Number(req.body.buy_unit),
+      expires_status: req.body.expires_status,
+      expires_at: req.body.expires_at || null,
+      note: String(req.body.note || '').trim(),
+    };
+
+    if (
+      !formData.name ||
+      !formData.category ||
+      !formData.type_unit ||
+      !Number.isInteger(formData.quantity) ||
+      formData.quantity < 0 ||
+      !Number.isFinite(formData.price) ||
+      formData.price < 0 ||
+      !Number.isFinite(formData.buy_unit) ||
+      formData.buy_unit < 0
+    ) {
+      throw new Error('กรุณาตรวจสอบข้อมูลสินค้าและราคา');
+    }
+
+    if (!['not_expired', 'expired'].includes(formData.expires_status)) {
+      throw new Error('สถานะวันหมดอายุไม่ถูกต้อง');
+    }
+
+    if (formData.expires_at) {
+      const date = new Date(`${formData.expires_at}T00:00:00Z`);
+
+      if (
+        Number.isNaN(date.getTime()) ||
+        date.toISOString().slice(0, 10) !== formData.expires_at
+      ) {
+        throw new Error('วันหมดอายุไม่ถูกต้อง');
+      }
+
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Bangkok',
+      });
+
+      formData.expires_status =
+        formData.expires_at < today ? 'expired' : 'not_expired';
+    }
+
+    const { error } = await supabase
+      .from('stock')
+      .update({
+        name: formData.name,
+        company: formData.company || null,
+        category: formData.category,
+        quantity: formData.quantity,
+        price: formData.price,
+        type_unit: formData.type_unit,
+        buy_unit: formData.buy_unit,
+        expires_status: formData.expires_status,
+        expires_at: formData.expires_at,
+        note: formData.note || null,
+      })
+      .eq('stock_id', stockId);
+
+    if (error) throw error;
+      
+    req.session.stockSuccess = 'แก้ไขข้อมูลสินค้าเรียบร้อยแล้ว';
+    return res.redirect('/stock/overview');
+  } catch (error) {
+    console.error('Update stock error:', error);
+
+    const { data: stock } = await supabase
+      .from('stock')
+      .select('*')
+      .eq('stock_id', stockId)
+      .single();
+
+return res.status(400).render('Stock/edit', {
+  user,
+  activePage: 'stock-overview',
+  stock: {
+    ...(stock || {}),
+    ...req.body
+  },
+  stocks: [],
+  formData: {
+    ...(stock || {}),
+    ...req.body
+  },
+  error: error.message || 'ไม่สามารถแก้ไขสินค้าได้'
+});
   }
 }
 module.exports = {
   getOverview,
   getCreate,
-  createStock
+  createStock,
+  getEdit,
+  updateStock,
 };
