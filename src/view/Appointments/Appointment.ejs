@@ -414,6 +414,11 @@
               <% }) %>
             </select>
             <div id="vetAvailabilityMessage" class="form-text">ระบบจะตรวจสอบนัดหมายก่อนยืนยัน</div>
+
+<div id="confirmError" class="alert alert-danger mt-3 d-none" role="alert">
+  <i class="fa-solid fa-circle-exclamation me-2"></i>
+  <span id="confirmErrorMessage"></span>
+</div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">กลับ</button>
@@ -871,15 +876,7 @@
         });
       });
 
-      document.getElementById('confirmForm').addEventListener('submit', event => {
-        const select = document.getElementById('confirmVet');
 
-        if (!select.value || select.selectedOptions[0].disabled) {
-          event.preventDefault();
-          showText('vetAvailabilityMessage', 'กรุณาเลือกสัตวแพทย์ที่ว่าง');
-          select.focus();
-        }
-      });
 
       document.getElementById('cancelForm').addEventListener('submit', event => {
         const reason = document.getElementById('cancelReason');
@@ -901,5 +898,73 @@
       });
     });
   </script>
+
+<script>
+  const confirmForm = document.getElementById('confirmForm');
+  const confirmSubmit = document.getElementById('confirmSubmit');
+  const confirmError = document.getElementById('confirmError');
+  const confirmErrorMessage = document.getElementById('confirmErrorMessage');
+
+  function showConfirmError(message) {
+    confirmErrorMessage.textContent = message;
+    confirmError.classList.remove('d-none');
+  }
+
+  function clearConfirmError() {
+    confirmErrorMessage.textContent = '';
+    confirmError.classList.add('d-none');
+  }
+
+  confirmForm.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const select = document.getElementById('confirmVet');
+
+    clearConfirmError();
+
+    if (!select.value || select.selectedOptions[0].disabled) {
+      showConfirmError('กรุณาเลือกสัตวแพทย์ที่ว่าง');
+      select.focus();
+      return;
+    }
+
+    confirmSubmit.disabled = true;
+    confirmSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังยืนยัน...';
+
+    try {
+      const response = await fetch(confirmForm.action, {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(confirmForm)),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        showConfirmError(data.message || 'ไม่สามารถยืนยันนัดหมายได้');
+        return;
+      }
+
+      window.location.href = data.redirect;
+
+    } catch (error) {
+      console.error('Confirm appointment error:', error);
+      showConfirmError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+
+    } finally {
+      confirmSubmit.disabled = false;
+      confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
+    }
+  });
+
+  document.getElementById('confirmModal').addEventListener('hidden.bs.modal', () => {
+    clearConfirmError();
+    confirmSubmit.disabled = false;
+    confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
+  });
+</script>
 </body>
 </html>

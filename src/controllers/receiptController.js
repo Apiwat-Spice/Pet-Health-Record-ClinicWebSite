@@ -53,6 +53,7 @@ async function getReceiptPageData(selectedVisitId) {
     `,
     )
     .eq('appointments.status', 'completed')
+    .in('status', ['Finish', 'Completed'])
     .order('visit_date', { ascending: false });
 
   if (visitError) throw visitError;

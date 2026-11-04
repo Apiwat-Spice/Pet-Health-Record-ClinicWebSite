@@ -434,36 +434,46 @@ exports.createAppointment = async (req, res) => {
 };
 
 exports.confirmAppointment = async (req, res) => {
-  if (!req.session?.user) return res.redirect('/login');
+  const sendError = (status, message) => {
+    return res.status(status).json({
+      success: false,
+      message,
+    });
+  };
+
+  if (!req.session?.user) {
+    return sendError(401, 'กรุณาเข้าสู่ระบบก่อนดำเนินการ');
+  }
 
   const user = req.session.user;
 
   if (!hasPermission(user)) {
-    return res.status(403).send('ไม่มีสิทธิ์ดำเนินการ');
+    return sendError(403, 'ไม่มีสิทธิ์ดำเนินการ');
   }
+  console.log('User:', req.body);
 
   const appointmentId = parsePositiveInteger(req.body.appointment_id);
   const vetId = parsePositiveInteger(req.body.vet_id);
 
   if (!appointmentId || !vetId) {
-    return res.status(400).send('กรุณาเลือกนัดหมายและสัตวแพทย์ให้ถูกต้อง');
+    return sendError(400, 'กรุณาเลือกนัดหมายและสัตวแพทย์ให้ถูกต้อง');
   }
 
   try {
     const appointment = await getAppointmentForUpdate(appointmentId);
 
     if (!appointment) {
-      return res.status(404).send('ไม่พบรายการนัดหมาย');
+      return sendError(404, 'ไม่พบรายการนัดหมาย');
     }
 
     if (appointment.status !== 'pending') {
-      return res.status(400).send('นัดหมายนี้ไม่ได้อยู่ในสถานะ Pending');
+      return sendError(400, 'นัดหมายนี้ไม่ได้อยู่ในสถานะ Pending');
     }
 
     const vet = await getActiveVet(vetId);
 
     if (!vet) {
-      return res.status(400).send('สัตวแพทย์ไม่ถูกต้องหรือไม่พร้อมให้บริการ');
+      return sendError(400, 'สัตวแพทย์ไม่ถูกต้องหรือไม่พร้อมให้บริการ');
     }
 
     const hasConflict = await getAppointmentConflict({
@@ -475,11 +485,10 @@ exports.confirmAppointment = async (req, res) => {
     });
 
     if (hasConflict) {
-      return res
-        .status(409)
-        .send(
-          'สัตวแพทย์หรือสัตว์เลี้ยงมีนัดหมายในช่วงเวลานี้ กรุณาเลือกเวลาอื่น',
-        );
+      return sendError(
+        409,
+        'สัตวแพทย์หรือสัตว์เลี้ยงมีนัดหมายในช่วงเวลานี้ กรุณาเลือกเวลาอื่น'
+      );
     }
 
     const clinicStaffId = await getClinicStaffId(user);
@@ -499,24 +508,30 @@ exports.confirmAppointment = async (req, res) => {
     if (updateError) throw updateError;
 
     if (!updated) {
-      return res
-        .status(409)
-        .send('สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่');
+      return sendError(
+        409,
+        'สถานะนัดหมายเปลี่ยนไปแล้ว กรุณาโหลดหน้าใหม่'
+      );
     }
 
-    return res.redirect(REDIRECT_URL);
+    return res.json({
+      success: true,
+      message: 'ยืนยันนัดหมายสำเร็จ',
+      redirect: REDIRECT_URL,
+    });
+
   } catch (error) {
     console.error('Confirm appointment error:', error);
 
     if (error.message === 'FORBIDDEN') {
-      return res.status(403).send('ไม่มีสิทธิ์ดำเนินการ');
+      return sendError(403, 'ไม่มีสิทธิ์ดำเนินการ');
     }
 
     if (error.message === 'CLINIC_STAFF_NOT_FOUND') {
-      return res.status(400).send('ไม่พบข้อมูล Clinic Staff ของบัญชีนี้');
+      return sendError(400, 'ไม่พบข้อมูล Clinic Staff ของบัญชีนี้');
     }
 
-    return res.status(500).send('ไม่สามารถยืนยันนัดหมายได้');
+    return sendError(500, 'ไม่สามารถยืนยันนัดหมายได้ กรุณาลองใหม่อีกครั้ง');
   }
 };
 
