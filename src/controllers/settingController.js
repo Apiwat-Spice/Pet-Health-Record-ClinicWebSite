@@ -562,7 +562,7 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const { error: updateError } = await supabase
       .from('users')

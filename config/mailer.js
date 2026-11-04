@@ -52,4 +52,51 @@ async function sendMemberRemovedNotice(email, firstName, lastName, role) {
   });
 }
 
-module.exports = { sendOtp, sendMemberRemovedNotice };
+
+async function sendMemberAddedNotice(email, firstName, lastName, role, password) {
+  const fullName = `${firstName} ${lastName}`;
+
+  return transporter.sendMail({
+    from: `"WebClinic" <${process.env.MAIL_USER}>`,
+    to: email,
+    subject: 'แจ้งข้อมูลบัญชีสมาชิกใหม่ WebClinic',
+    text: `เรียน ${fullName}
+
+บัญชี WebClinic ของคุณถูกสร้างโดยผู้ดูแลคลินิกเรียบร้อยแล้ว
+
+รายละเอียดบัญชี
+ชื่อ: ${fullName}
+ตำแหน่ง: ${role}
+อีเมล: ${email}
+รหัสผ่านเริ่มต้น: ${password}
+
+กรุณาเข้าสู่ระบบและเปลี่ยนรหัสผ่านเพื่อความปลอดภัย
+
+หากมีข้อสงสัย กรุณาติดต่อคลินิกของคุณ
+
+WebClinic`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:24px;border:1px solid #ddd;border-radius:12px">
+        <h2 style="color:#315f85">WebClinic</h2>
+        <p>เรียน ${fullName}</p>
+        <p>บัญชีสมาชิกของคุณถูกสร้างโดยผู้ดูแลคลินิกเรียบร้อยแล้ว</p>
+        <div style="background:#eaf2ff;padding:16px;border-radius:8px;color:#315f85">
+          <strong>รายละเอียดบัญชี</strong>
+          <p>ชื่อ: ${fullName}</p>
+          <p>ตำแหน่ง: ${role}</p>
+          <p>อีเมล: ${email}</p>
+          <p>รหัสผ่านเริ่มต้น: ${password}</p>
+        </div>
+        <p style="margin-top:20px">กรุณาเข้าสู่ระบบและเปลี่ยนรหัสผ่านเพื่อความปลอดภัย</p>
+        <p style="color:#777">อีเมลฉบับนี้ส่งโดยระบบ WebClinic อัตโนมัติ</p>
+      </div>
+    `
+  });
+}
+
+
+module.exports = {
+  sendOtp,
+  sendMemberRemovedNotice,
+  sendMemberAddedNotice
+};

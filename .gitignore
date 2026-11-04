@@ -28,3 +28,8 @@ PetOwner เพิ่่มฟอร์มกรอกเบอร์
 
 นั่งทำความข้าใจ Appoinment VisitRecord Receipt 
 Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว
+
+Sort Appoinment
+Walk In ล็อควันเวลาให้เลย
+
+Appointment กด Pending ยอมรับ เพิ่ม ปฎิเสธ เพิ่ม ErrorMsg ใน UI

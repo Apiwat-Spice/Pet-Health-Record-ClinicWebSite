@@ -310,6 +310,21 @@ exports.create = (type) => async (req, res) => {
 
     if (profileError) throw profileError;
 
+    // ส่งอีเมลแจ้งสมาชิกใหม่
+    const { sendMemberAddedNotice } = require('../../config/mailer');
+
+    try {
+      await sendMemberAddedNotice(
+        email,
+        first_name,
+        last_name,
+        cfg.title,
+        password,
+      );
+    } catch (mailError) {
+      console.error('ส่งอีเมลแจ้งสมาชิกใหม่ไม่สำเร็จ:', mailError);
+    }
+
     return res.redirect(`/members/${type}?success=created`);
   } catch (error) {
     console.error(error);
