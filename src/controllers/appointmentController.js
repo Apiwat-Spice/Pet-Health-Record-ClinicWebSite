@@ -3,6 +3,13 @@ const supabase = require('../../config/supabase');
 const REDIRECT_URL = '/appointments';
 const ALLOWED_ROLES = ['clinic', 'clinic_staff'];
 const ACTIVE_STATUSES = ['pending', 'confirmed'];
+const CONFLICT_STATUSES = ['pending', 'confirmed', 'completed'];
+const APPOINTMENT_TIMES = Array.from({ length: 16 }, (_, index) => {
+  const totalMinutes = 9 * 60 + index * 30;
+  const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+  const minutes = String(totalMinutes % 60).padStart(2, '0');
+  return `${hours}:${minutes}`;
+});
 const CALENDAR_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'];
 
 const STATUS_COLORS = {
@@ -50,6 +57,34 @@ function parseAppointmentDateTime(value) {
     dateTime,
     appointment_date: `${year}-${month}-${day}`,
     appointment_time: `${hour}:${minute}:00`,
+  };
+}
+function parseConfirmDateTime(date, time) {
+  if (typeof date !== 'string' || typeof time !== 'string') return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  if (!APPOINTMENT_TIMES.includes(time)) return null;
+
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+
+  const dateTime = new Date(year, month - 1, day, hour, minute);
+
+  if (
+    dateTime.getFullYear() !== year ||
+    dateTime.getMonth() !== month - 1 ||
+    dateTime.getDate() !== day ||
+    dateTime.getHours() !== hour ||
+    dateTime.getMinutes() !== minute
+  ) {
+    return null;
+  }
+
+  if (dateTime < new Date()) return null;
+
+  return {
+    dateTime,
+    appointment_date: date,
+    appointment_time: `${time}:00`,
   };
 }
 
@@ -100,12 +135,13 @@ async function getAppointmentConflict({
   petId,
   vetId,
   excludeAppointmentId = null,
+  statuses = ACTIVE_STATUSES,
 }) {
   const { data, error } = await supabase
     .from('appointments')
     .select('appointment_id, pet_id, vet_id, appointment_time')
     .eq('appointment_date', appointmentDate)
-    .in('status', ACTIVE_STATUSES)
+    .in('status', statuses)
     .or(`pet_id.eq.${petId},vet_id.eq.${vetId}`);
 
   if (error) throw error;
@@ -122,16 +158,18 @@ async function getAppointmentConflict({
       return false;
     }
 
-    const existingMinutes =
-      Number(String(appointment.appointment_time).slice(0, 2)) * 60 +
-      Number(String(appointment.appointment_time).slice(3, 5));
+    const existingTime = String(appointment.appointment_time).slice(0, 5);
+    const [hours, minutes] = existingTime.split(':').map(Number);
+    const existingMinutes = hours * 60 + minutes;
 
     const overlaps = Math.abs(existingMinutes - requestedMinutes) < 30;
 
     return (
       overlaps &&
-      (Number(appointment.pet_id) === petId ||
-        Number(appointment.vet_id) === vetId)
+      (
+        Number(appointment.pet_id) === petId ||
+        Number(appointment.vet_id) === vetId
+      )
     );
   });
 }
@@ -149,7 +187,7 @@ exports.showAppointments = async (req, res) => {
         status, status_detail,
         pets (
           pet_name,
-          pet_owners (first_name, last_name, username)
+          pet_owners (first_name, last_name, username , phone)
         ),
         vets (first_name, last_name)
       `,
@@ -191,23 +229,24 @@ exports.showAppointments = async (req, res) => {
 
     if (petsError) throw petsError;
 
-    const appointments = (data || []).map((appointment) => ({
-      ...appointment,
-      pet_name: appointment.pets?.pet_name || '-',
-      owner_name:
-        [
-          appointment.pets?.pet_owners?.first_name,
-          appointment.pets?.pet_owners?.last_name,
-        ]
-          .filter(Boolean)
-          .join(' ') ||
-        appointment.pets?.pet_owners?.username ||
-        '-',
-      vet_name:
-        [appointment.vets?.first_name, appointment.vets?.last_name]
-          .filter(Boolean)
-          .join(' ') || '-',
-    }));
+const appointments = (data || []).map((appointment) => ({
+  ...appointment,
+  pet_name: appointment.pets?.pet_name || '-',
+  owner_name:
+    [
+      appointment.pets?.pet_owners?.first_name,
+      appointment.pets?.pet_owners?.last_name,
+    ]
+      .filter(Boolean)
+      .join(' ') ||
+    appointment.pets?.pet_owners?.username ||
+    '-',
+  owner_phone: appointment.pets?.pet_owners?.phone || '-',
+  vet_name:
+    [appointment.vets?.first_name, appointment.vets?.last_name]
+      .filter(Boolean)
+      .join(' ') || '-',
+}));
 
     return res.render('Appointments/Appointment', {
       user: req.session.user,
@@ -450,13 +489,19 @@ exports.confirmAppointment = async (req, res) => {
   if (!hasPermission(user)) {
     return sendError(403, 'ไม่มีสิทธิ์ดำเนินการ');
   }
-  console.log('User:', req.body);
 
   const appointmentId = parsePositiveInteger(req.body.appointment_id);
   const vetId = parsePositiveInteger(req.body.vet_id);
+  const dateTime = parseConfirmDateTime(
+    req.body.appointment_date,
+    req.body.appointment_time
+  );
 
-  if (!appointmentId || !vetId) {
-    return sendError(400, 'กรุณาเลือกนัดหมายและสัตวแพทย์ให้ถูกต้อง');
+  if (!appointmentId || !vetId || !dateTime) {
+    return sendError(
+      400,
+      'กรุณาเลือกสัตวแพทย์ วันที่ และเวลาให้ถูกต้อง โดยเลือกเวลาได้ทุก 30 นาที ตั้งแต่ 09:00–16:30 น. และต้องไม่เป็นเวลาในอดีต'
+    );
   }
 
   try {
@@ -477,29 +522,46 @@ exports.confirmAppointment = async (req, res) => {
     }
 
     const hasConflict = await getAppointmentConflict({
-      appointmentDate: appointment.appointment_date,
-      appointmentTime: String(appointment.appointment_time).slice(0, 8),
-      petId: appointment.pet_id,
+      appointmentDate: dateTime.appointment_date,
+      appointmentTime: dateTime.appointment_time,
+      petId: Number(appointment.pet_id),
       vetId,
       excludeAppointmentId: appointmentId,
+      statuses: CONFLICT_STATUSES,
     });
 
     if (hasConflict) {
       return sendError(
         409,
-        'สัตวแพทย์หรือสัตว์เลี้ยงมีนัดหมายในช่วงเวลานี้ กรุณาเลือกเวลาอื่น'
+        'วันและเวลาที่เลือกชนกับนัดหมายของสัตวแพทย์หรือสัตว์เลี้ยง กรุณาเลือกเวลาอื่น'
       );
     }
 
     const clinicStaffId = await getClinicStaffId(user);
 
+    const oldDate = String(appointment.appointment_date).slice(0, 10);
+    const oldTime = String(appointment.appointment_time).slice(0, 5);
+    const newDate = dateTime.appointment_date;
+    const newTime = req.body.appointment_time;
+
+    const hasChanged = oldDate !== newDate || oldTime !== newTime;
+
+    const updateData = {
+      status: 'confirmed',
+      vet_id: vetId,
+      clinic_staff_id: clinicStaffId,
+      appointment_date: newDate,
+      appointment_time: dateTime.appointment_time,
+    };
+
+    if (hasChanged) {
+      updateData.status_detail =
+        `มีการเปลี่ยนวันและเวลานัดจาก ${oldDate} เวลา ${oldTime} น. เป็น ${newDate} เวลา ${newTime} น.`;
+    }
+
     const { data: updated, error: updateError } = await supabase
       .from('appointments')
-      .update({
-        status: 'confirmed',
-        vet_id: vetId,
-        clinic_staff_id: clinicStaffId,
-      })
+      .update(updateData)
       .eq('appointment_id', appointmentId)
       .eq('status', 'pending')
       .select('appointment_id')
@@ -516,10 +578,11 @@ exports.confirmAppointment = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'ยืนยันนัดหมายสำเร็จ',
+      message: hasChanged
+        ? 'ยืนยันนัดหมายและเปลี่ยนวันเวลาเรียบร้อยแล้ว'
+        : 'ยืนยันนัดหมายสำเร็จ',
       redirect: REDIRECT_URL,
     });
-
   } catch (error) {
     console.error('Confirm appointment error:', error);
 
@@ -610,41 +673,49 @@ exports.getVetAppointmentsByDate = async (req, res) => {
     return res.status(401).json({ message: 'กรุณาเข้าสู่ระบบ' });
   }
 
+  if (!hasPermission(req.session.user)) {
+    return res.status(403).json({ message: 'ไม่มีสิทธิ์ดำเนินการ' });
+  }
+
   const vetId = parsePositiveInteger(req.query.vet_id);
   const date = req.query.appointment_date;
+  const excludeAppointmentId = req.query.exclude_appointment_id
+    ? parsePositiveInteger(req.query.exclude_appointment_id)
+    : null;
 
   if (!vetId || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
-    return res.status(400).json({ message: 'ข้อมูลสัตวแพทย์หรือวันที่ไม่ถูกต้อง' });
+    return res.status(400).json({
+      message: 'ข้อมูลสัตวแพทย์หรือวันที่ไม่ถูกต้อง',
+    });
   }
 
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('appointment_time, status')
+      .select('appointment_id, appointment_time, status')
       .eq('vet_id', vetId)
       .eq('appointment_date', date)
-      .in('status', ['pending', 'confirmed', 'completed'])
+      .in('status', CONFLICT_STATUSES)
       .order('appointment_time', { ascending: true });
 
     if (error) throw error;
 
-    const appointments = (data || []).map(a => ({
-      time: String(a.appointment_time).slice(0, 5),
-      status: a.status
-    }));
+    const appointments = (data || [])
+      .filter(a =>
+        !excludeAppointmentId ||
+        Number(a.appointment_id) !== excludeAppointmentId
+      )
+      .map(a => ({
+        time: String(a.appointment_time).slice(0, 5),
+        status: a.status,
+      }));
 
-    return res.json({
-      completed: appointments
-        .filter(a => a.status === 'completed')
-        .map(a => a.time),
-      booked: appointments
-        .filter(a => ['pending', 'confirmed'].includes(a.status))
-        .map(a => a.time)
-    });
+    return res.json({ appointments });
   } catch (error) {
     console.error('getVetAppointmentsByDate error:', error);
+
     return res.status(500).json({
-      message: 'ไม่สามารถโหลดตารางนัดสัตวแพทย์ได้'
+      message: 'ไม่สามารถโหลดตารางนัดสัตวแพทย์ได้',
     });
   }
 };

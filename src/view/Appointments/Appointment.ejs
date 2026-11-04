@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,51 +9,52 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     /* Popup เพิ่มนัดหมาย */
-#createAppointmentModal .modal-dialog {
-  height: calc(100% - 1rem);
-  max-height: calc(100dvh - 1rem);
-  margin: 0.5rem auto;
-}
+    #createAppointmentModal .modal-dialog {
+      height: calc(100% - 1rem);
+      max-height: calc(100dvh - 1rem);
+      margin: 0.5rem auto;
+    }
 
-#createAppointmentModal .modal-content {
-  height: 100%;
-  max-height: calc(100dvh - 1rem);
-  overflow: hidden;
-}
+    #createAppointmentModal .modal-content {
+      height: 100%;
+      max-height: calc(100dvh - 1rem);
+      overflow: hidden;
+    }
 
-#createAppointmentModal #createAppointmentForm {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
+    #createAppointmentModal #createAppointmentForm {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
 
-#createAppointmentModal .modal-header,
-#createAppointmentModal .modal-footer {
-  flex-shrink: 0;
-}
+    #createAppointmentModal .modal-header,
+    #createAppointmentModal .modal-footer {
+      flex-shrink: 0;
+    }
 
-#createAppointmentModal .modal-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
+    #createAppointmentModal .modal-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
 
-@media (max-width: 576px) {
-  #createAppointmentModal .modal-dialog {
-    height: calc(100% - 1rem);
-    margin: 0.5rem;
-  }
+    @media (max-width: 576px) {
+      #createAppointmentModal .modal-dialog {
+        height: calc(100% - 1rem);
+        margin: 0.5rem;
+      }
 
-  #createAppointmentModal .modal-content {
-    max-height: calc(100dvh - 1rem);
-  }
-}
+      #createAppointmentModal .modal-content {
+        max-height: calc(100dvh - 1rem);
+      }
+    }
   </style>
 </head>
+
 <body class="bg-light">
   <%- include('../partial/navbar') %>
   <div class="container-fluid">
@@ -65,16 +67,16 @@
         </div>
 
         <% if (locals.success) { %>
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i><%= success %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
-          </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="fa-solid fa-circle-check me-2"></i><%= success %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+        </div>
         <% } %>
         <% if (locals.error) { %>
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
-          </div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+        </div>
         <% } %>
 
         <section>
@@ -110,109 +112,79 @@
               </div>
 
               <% ['confirmed', 'pending', 'cancelled'].forEach(group => { %>
-                <div class="appointment-group <%= group === 'confirmed' ? '' : 'd-none' %>" data-group="<%= group %>">
-                  <% const filtered = appointments.filter(a => a.status === group); %>
-                  <% if (filtered.length === 0) { %>
-                    <div class="empty-state text-center text-muted py-5">
-                      <i class="fa-regular fa-calendar-xmark fa-3x mb-3"></i>
-                      <p class="mb-0">ไม่มีรายการนัดหมายในสถานะนี้</p>
-                    </div>
-                  <% } else { %>
-                    <div class="table-responsive">
-                      <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                          <tr>
-                            <th>วันและเวลา</th>
-                            <th>สัตว์เลี้ยง</th>
-                            <th>หัวข้อ / ประเภท</th>
-                            <th>สัตวแพทย์</th>
-                            <th>สถานะ</th>
-                            <th>รายละเอียด</th>
-                            <th>จัดการ</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <% filtered.forEach(a => { %>
-                            <tr data-search="<%= [a.pet_name, a.owner_name, a.title, a.type, a.vet_name].join(' ').toLowerCase() %>">
-                              <td class="text-nowrap">
-                                <div class="fw-semibold"><%= a.appointment_date %></div>
-                                <small class="text-muted"><%= String(a.appointment_time || '').slice(0, 5) %></small>
-                              </td>
-                              <td>
-                                <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name || '-' %></div>
-                                <small class="text-muted"><%= a.owner_name || '-' %></small>
-                              </td>
-                              <td>
-                                <div><%= a.title || '-' %></div>
-                                <small class="text-muted"><%= a.type || '-' %></small>
-                              </td>
-                              <td><%= a.vet_name || '-' %></td>
-                              <td>
-                                <% if (a.status === 'pending') { %>
-                                  <span class="badge text-bg-warning">Pending</span>
-                                <% } else if (a.status === 'confirmed') { %>
-                                  <span class="badge text-bg-success">Confirmed</span>
-                                <% } else if (a.status === 'cancelled') { %>
-                                  <span class="badge text-bg-danger">Cancelled</span>
-                                <% } else { %>
-                                  <span class="badge text-bg-secondary">Completed</span>
-                                <% } %>
-                              </td>
-                              <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary detail-button"
-                                  data-bs-toggle="modal" data-bs-target="#appointmentModal"
-                                  data-title="<%= a.title || 'Appointment' %>"
-                                  data-pet="<%= a.pet_name || '-' %>"
-                                  data-owner="<%= a.owner_name || '-' %>"
-                                  data-date="<%= a.appointment_date || '-' %>"
-                                  data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
-                                  data-type="<%= a.type || '-' %>"
-                                  data-vet="<%= a.vet_name || '-' %>"
-                                  data-status="<%= a.status %>"
-                                  data-detail="<%= a.detail || '-' %>"
-                                  data-status-detail="<%= a.status_detail || '-' %>">
-                                  <i class="fa-solid fa-eye"></i>
-                                </button>
-                              </td>
-                              <td class="text-nowrap">
-                                <% if (a.status === 'pending') { %>
-                                  <button type="button" class="btn btn-sm btn-outline-success confirm-button"
-                                    data-bs-toggle="modal" data-bs-target="#confirmModal"
-                                    data-id="<%= a.appointment_id %>"
-                                    data-pet="<%= a.pet_name || '-' %>"
-                                    data-owner="<%= a.owner_name || '-' %>"
-                                    data-date="<%= a.appointment_date || '-' %>"
-                                    data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
-                                    data-title="<%= a.title || '-' %>"
-                                    data-type="<%= a.type || '-' %>"
-                                    data-detail="<%= a.detail || '-' %>">
-                                    <i class="fa-solid fa-calendar-check"></i>
-                                  </button>
-                                <% } else if (a.status === 'confirmed') { %>
-                                  <button type="button" class="btn btn-sm btn-outline-danger cancel-button"
-                                    data-bs-toggle="modal" data-bs-target="#cancelModal"
-                                    data-id="<%= a.appointment_id %>"
-                                    data-pet="<%= a.pet_name || '-' %>"
-                                    data-owner="<%= a.owner_name || '-' %>"
-                                    data-date="<%= a.appointment_date || '-' %>"
-                                    data-time="<%= String(a.appointment_time || '').slice(0, 5) %>"
-                                    data-title="<%= a.title || '-' %>"
-                                    data-type="<%= a.type || '-' %>"
-                                    data-vet="<%= a.vet_name || '-' %>"
-                                    data-detail="<%= a.detail || '-' %>">
-                                    <i class="fa-solid fa-calendar-xmark"></i>
-                                  </button>
-                                <% } else { %>
-                                  <span class="text-muted">-</span>
-                                <% } %>
-                              </td>
-                            </tr>
-                          <% }) %>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% } %>
+              <div class="appointment-group <%= group === 'confirmed' ? '' : 'd-none' %>" data-group="<%= group %>">
+                <% const filtered = appointments.filter(a => a.status === group); %>
+                <% if (filtered.length === 0) { %>
+                <div class="empty-state text-center text-muted py-5">
+                  <i class="fa-regular fa-calendar-xmark fa-3x mb-3"></i>
+                  <p class="mb-0">ไม่มีรายการนัดหมายในสถานะนี้</p>
                 </div>
+                <% } else { %>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>วันและเวลา</th>
+                        <th>สัตว์เลี้ยง</th>
+                        <th>หัวข้อ / ประเภท</th>
+                        <th>สัตวแพทย์</th>
+                        <th>สถานะ</th>
+                        <th>รายละเอียด</th>
+                        <th>จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% filtered.forEach(a => { %>
+                      <tr data-search="<%= [a.pet_name, a.owner_name, a.title, a.type, a.vet_name].join(' ').toLowerCase() %>">
+                        <td class="text-nowrap">
+                          <div class="fw-semibold"><%= a.appointment_date %></div>
+                          <small class="text-muted"><%= String(a.appointment_time || '').slice(0, 5) %></small>
+                        </td>
+                        <td>
+                          <div class="fw-semibold"><i class="fa-solid fa-paw text-primary me-1"></i><%= a.pet_name || '-' %></div>
+                          <small class="text-muted"><%= a.owner_name || '-' %></small>
+                        </td>
+                        <td>
+                          <div><%= a.title || '-' %></div>
+                          <small class="text-muted"><%= a.type || '-' %></small>
+                        </td>
+                        <td><%= a.vet_name || '-' %></td>
+                        <td>
+                          <% if (a.status === 'pending') { %>
+                          <span class="badge text-bg-warning">Pending</span>
+                          <% } else if (a.status === 'confirmed') { %>
+                          <span class="badge text-bg-success">Confirmed</span>
+                          <% } else if (a.status === 'cancelled') { %>
+                          <span class="badge text-bg-danger">Cancelled</span>
+                          <% } else { %>
+                          <span class="badge text-bg-secondary">Completed</span>
+                          <% } %>
+                        </td>
+                        <td>
+                          <button type="button" class="btn btn-sm btn-outline-primary detail-button" data-bs-toggle="modal" data-bs-target="#appointmentModal" data-title="<%= a.title || '-' %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-phone="<%= a.owner_phone || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-type="<%= a.type || '-' %>" data-vet="<%= a.vet_name || '-' %>" data-status="<%= a.status || '-' %>" data-detail="<%= a.detail || '-' %>" data-status-detail="<%= a.status_detail || '-' %>">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                        <td class="text-nowrap">
+                          <% if (a.status === 'pending') { %>
+                          <button type="button" class="btn btn-sm btn-outline-success confirm-button" data-bs-toggle="modal" data-bs-target="#confirmModal" data-id="<%= a.appointment_id %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-phone="<%= a.owner_phone || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-title="<%= a.title || '-' %>" data-type="<%= a.type || '-' %>" data-detail="<%= a.detail || '-' %>">
+                            <i class="fa-solid fa-calendar-check"></i>
+                          </button>
+                          <% } else if (a.status === 'confirmed') { %>
+                          <button type="button" class="btn btn-sm btn-outline-danger cancel-button" data-bs-toggle="modal" data-bs-target="#cancelModal" data-id="<%= a.appointment_id %>" data-pet="<%= a.pet_name || '-' %>" data-owner="<%= a.owner_name || '-' %>" data-phone="<%= a.owner_phone || '-' %>" data-date="<%= a.appointment_date || '-' %>" data-time="<%= String(a.appointment_time || '').slice(0, 5) %>" data-title="<%= a.title || '-' %>" data-type="<%= a.type || '-' %>" data-vet="<%= a.vet_name || '-' %>" data-detail="<%= a.detail || '-' %>">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                          </button>
+                          <% } else { %>
+                          <span class="text-muted">-</span>
+                          <% } %>
+                        </td>
+                      </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+                <% } %>
+              </div>
               <% }) %>
               <p id="noAppointmentResult" class="text-center text-muted py-3 d-none">ไม่พบผลการค้นหา</p>
             </div>
@@ -224,7 +196,7 @@
 
   <!-- Create Appointment Modal -->
   <div class="modal fade" id="createAppointmentModal" tabindex="-1" aria-hidden="true">
-   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form action="/appointments/create" method="POST" id="createAppointmentForm">
           <div class="modal-header">
@@ -235,31 +207,26 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label for="createPetOwnerSearch" class="form-label">ค้นหา PetOwner <span class="text-danger">*</span></label>
-                <input type="text" id="createPetOwnerSearch" class="form-control mb-2"
-                  placeholder="ค้นหาชื่อ นามสกุล หรือ Username..." autocomplete="off">
+                <input type="text" id="createPetOwnerSearch" class="form-control mb-2" placeholder="ค้นหาชื่อ นามสกุล หรือ Username..." autocomplete="off">
                 <select name="pet_owner_id" id="createPetOwnerId" class="form-select" required>
                   <option value="">-- เลือก PetOwner --</option>
                   <% (petOwners || []).forEach(o => { %>
-                    <option value="<%= o.pet_owner_id %>"
-                      data-search="<%= `${o.first_name || ''} ${o.last_name || ''} ${o.username || ''}`.toLowerCase() %>">
-                      <%= o.first_name || '' %> <%= o.last_name || '' %> (@<%= o.username || '-' %>)
-                    </option>
+                  <option value="<%= o.pet_owner_id %>" data-search="<%= `${o.first_name || ''} ${o.last_name || ''} ${o.username || ''}`.toLowerCase() %>">
+                    <%= o.first_name || '' %> <%= o.last_name || '' %> (@<%= o.username || '-' %>)
+                  </option>
                   <% }) %>
                 </select>
               </div>
 
               <div class="col-md-6">
                 <label for="createPetSearch" class="form-label">ค้นหาสัตว์เลี้ยง <span class="text-danger">*</span></label>
-                <input type="text" id="createPetSearch" class="form-control mb-2"
-                  placeholder="ค้นหาชื่อสัตว์เลี้ยง..." autocomplete="off">
+                <input type="text" id="createPetSearch" class="form-control mb-2" placeholder="ค้นหาชื่อสัตว์เลี้ยง..." autocomplete="off">
                 <select name="pet_id" id="createPetId" class="form-select" required disabled>
                   <option value="">-- เลือก PetOwner ก่อน --</option>
                   <% (pets || []).forEach(p => { %>
-                    <option value="<%= p.pet_id %>"
-                      data-owner-id="<%= p.pet_owner_id %>"
-                      data-search="<%= (p.pet_name || '').toLowerCase() %>">
-                      <%= p.pet_name || '-' %>
-                    </option>
+                  <option value="<%= p.pet_id %>" data-owner-id="<%= p.pet_owner_id %>" data-search="<%= (p.pet_name || '').toLowerCase() %>">
+                    <%= p.pet_name || '-' %>
+                  </option>
                   <% }) %>
                 </select>
                 <div class="form-text">เลือก PetOwner ก่อนเพื่อกรองสัตว์เลี้ยงของเจ้าของรายนั้น</div>
@@ -270,9 +237,9 @@
                 <select name="vet_id" id="createVetId" class="form-select" required>
                   <option value="">-- เลือกสัตวแพทย์ --</option>
                   <% vets.forEach(v => { %>
-                    <option value="<%= v.vet_id %>">
-                      <%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)
-                    </option>
+                  <option value="<%= v.vet_id %>">
+                    <%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)
+                  </option>
                   <% }) %>
                 </select>
               </div>
@@ -364,14 +331,34 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="modalPet" class="fw-semibold"></div></div>
-            <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="modalOwner"></div></div>
-            <div class="col-6"><small class="text-muted">วันที่</small><div id="modalDate"></div></div>
-            <div class="col-6"><small class="text-muted">เวลา</small><div id="modalTime"></div></div>
-            <div class="col-6"><small class="text-muted">ประเภท</small><div id="modalType"></div></div>
-            <div class="col-6"><small class="text-muted">สัตวแพทย์</small><div id="modalVet"></div></div>
-            <div class="col-12"><small class="text-muted">สถานะ</small><div id="modalStatus"></div></div>
-            <div class="col-12"><small class="text-muted">รายละเอียด</small><p id="modalDetail" class="mb-0 text-break"></p></div>
+            <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small>
+              <div id="modalPet" class="fw-semibold"></div>
+            </div>
+            <div class="col-6"><small class="text-muted">เจ้าของ</small>
+              <div id="modalOwner"></div>
+            </div>
+            <div class="col-md-6">
+              <small class="text-muted">เบอร์โทร</small>
+              <div id="modalPhone" class="fw-semibold">-</div>
+            </div>
+            <div class="col-6"><small class="text-muted">วันที่</small>
+              <div id="modalDate"></div>
+            </div>
+            <div class="col-6"><small class="text-muted">เวลา</small>
+              <div id="modalTime"></div>
+            </div>
+            <div class="col-6"><small class="text-muted">ประเภท</small>
+              <div id="modalType"></div>
+            </div>
+            <div class="col-6"><small class="text-muted">สัตวแพทย์</small>
+              <div id="modalVet"></div>
+            </div>
+            <div class="col-12"><small class="text-muted">สถานะ</small>
+              <div id="modalStatus"></div>
+            </div>
+            <div class="col-12"><small class="text-muted">รายละเอียด</small>
+              <p id="modalDetail" class="mb-0 text-break"></p>
+            </div>
             <div class="col-12" id="modalStatusDetailContainer">
               <small class="text-muted">หมายเหตุสถานะ</small>
               <p id="modalStatusDetail" class="mb-0 text-break"></p>
@@ -387,42 +374,135 @@
 
   <!-- Confirm Appointment Modal -->
   <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form action="/appointments/confirm" method="POST" id="confirmForm">
           <div class="modal-header">
-            <h5 class="modal-title"><i class="fa-solid fa-calendar-check text-success me-2"></i>Confirm Appointment</h5>
+            <h5 class="modal-title">
+              <i class="fa-solid fa-calendar-check text-success me-2"></i>
+              Confirm Appointment
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
           </div>
           <div class="modal-body">
             <input type="hidden" name="appointment_id" id="confirmId">
             <h6 class="fw-bold mb-3">ตรวจสอบรายละเอียดนัดหมาย</h6>
             <div class="row g-3 mb-4">
-              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="confirmPet" class="fw-semibold"></div></div>
-              <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="confirmOwner"></div></div>
-              <div class="col-6"><small class="text-muted">วันที่</small><div id="confirmDate"></div></div>
-              <div class="col-6"><small class="text-muted">เวลา</small><div id="confirmTime"></div></div>
-              <div class="col-6"><small class="text-muted">หัวข้อ</small><div id="confirmTitle"></div></div>
-              <div class="col-6"><small class="text-muted">ประเภท</small><div id="confirmType"></div></div>
-              <div class="col-12"><small class="text-muted">รายละเอียด</small><div id="confirmDetail" class="text-break"></div></div>
+              <div class="col-6">
+                <small class="text-muted">สัตว์เลี้ยง</small>
+                <div id="confirmPet" class="fw-semibold"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">เจ้าของ</small>
+                <div id="confirmOwner"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">เบอร์โทรศัพท์</small>
+                <div id="confirmPhone"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">วันนัดเดิม</small>
+                <div id="confirmDate"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">เวลาเดิม</small>
+                <div id="confirmTime"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">หัวข้อ</small>
+                <div id="confirmTitle"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">ประเภท</small>
+                <div id="confirmType"></div>
+              </div>
+              <div class="col-12">
+                <small class="text-muted">รายละเอียด</small>
+                <div id="confirmDetail" class="text-break"></div>
+              </div>
             </div>
-            <label for="confirmVet" class="form-label fw-semibold">เลือกสัตวแพทย์ <span class="text-danger">*</span></label>
-            <select name="vet_id" id="confirmVet" class="form-select" required>
-              <option value="">-- เลือกสัตวแพทย์ --</option>
-              <% vets.forEach(v => { %>
-                <option value="<%= v.vet_id %>"><%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)</option>
-              <% }) %>
-            </select>
-            <div id="vetAvailabilityMessage" class="form-text">ระบบจะตรวจสอบนัดหมายก่อนยืนยัน</div>
-
-<div id="confirmError" class="alert alert-danger mt-3 d-none" role="alert">
-  <i class="fa-solid fa-circle-exclamation me-2"></i>
-  <span id="confirmErrorMessage"></span>
-</div>
+            <hr>
+            <h6 class="fw-bold mb-3">
+              <i class="fa-solid fa-calendar-pen me-2"></i>กำหนดวันและเวลานัด
+            </h6>
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="confirmVet" class="form-label fw-semibold">
+                  สัตวแพทย์ <span class="text-danger">*</span>
+                </label>
+                <select name="vet_id" id="confirmVet" class="form-select" required>
+                  <option value="">-- เลือกสัตวแพทย์ --</option>
+                  <% vets.forEach(v => { %>
+                  <option value="<%= v.vet_id %>">
+                    <%= v.first_name %> <%= v.last_name %> (Class <%= v.vet_class || '-' %>)
+                  </option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="confirmDateInput" class="form-label fw-semibold">
+                  วันที่นัดใหม่ <span class="text-danger">*</span>
+                </label>
+                <input type="date" name="appointment_date" id="confirmDateInput" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label for="confirmTimeSelect" class="form-label fw-semibold">
+                  เวลานัดใหม่ <span class="text-danger">*</span>
+                </label>
+                <select name="appointment_time" id="confirmTimeSelect" class="form-select" required>
+                  <option value="">-- เลือกเวลานัด --</option>
+                  <% for (let hour = 9; hour <= 16; hour++) { %>
+                  <% for (let minute of [0, 30]) { %>
+                  <% if (hour !== 16 || minute === 0 || minute === 30) { %>
+                  <% const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`; %>
+                  <option value="<%= time %>"><%= time %> น.</option>
+                  <% } %>
+                  <% } %>
+                  <% } %>
+                </select>
+                <div class="form-text">เลือกเวลาได้ทุก 30 นาที ตั้งแต่ 09:00–16:30 น.</div>
+              </div>
+            </div>
+            <div class="border rounded p-3 mt-3">
+              <div class="fw-bold mb-2">
+                <i class="fa-solid fa-calendar-days me-2"></i>ตารางนัดสัตวแพทย์
+              </div>
+              <div id="confirmScheduleMessage" class="small text-muted mb-2">
+                เลือกสัตวแพทย์และวันที่เพื่อดูตารางนัด
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 40%;">เวลา</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="confirmScheduleBody">
+                    <tr>
+                      <td colspan="2" class="text-center text-muted">
+                        ยังไม่มีข้อมูลตารางนัด
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="form-text mt-2">
+                Pending, Confirmed และ Completed ถือว่าไม่ว่าง
+                โดยระบบตรวจเวลาที่ห่างกันน้อยกว่า 30 นาที
+              </div>
+            </div>
+            <div id="confirmTimeMessage" class="small mt-2" aria-live="polite"></div>
+            <div id="confirmError" class="alert alert-danger mt-3 d-none" role="alert">
+              <i class="fa-solid fa-circle-exclamation me-2"></i>
+              <span id="confirmErrorMessage"></span>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">กลับ</button>
-            <button type="submit" class="btn btn-success" id="confirmSubmit"><i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย</button>
+            <button type="submit" class="btn btn-success" id="confirmSubmit">
+              <i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย
+            </button>
           </div>
         </form>
       </div>
@@ -444,14 +524,34 @@
               <i class="fa-solid fa-triangle-exclamation me-1"></i>กรุณาตรวจสอบรายละเอียดก่อนยกเลิกนัดหมาย
             </div>
             <div class="row g-3 mb-4">
-              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small><div id="cancelPet" class="fw-semibold"></div></div>
-              <div class="col-6"><small class="text-muted">เจ้าของ</small><div id="cancelOwner"></div></div>
-              <div class="col-6"><small class="text-muted">วันที่</small><div id="cancelDate"></div></div>
-              <div class="col-6"><small class="text-muted">เวลา</small><div id="cancelTime"></div></div>
-              <div class="col-6"><small class="text-muted">หัวข้อ</small><div id="cancelTitle"></div></div>
-              <div class="col-6"><small class="text-muted">ประเภท</small><div id="cancelType"></div></div>
-              <div class="col-12"><small class="text-muted">สัตวแพทย์</small><div id="cancelVet"></div></div>
-              <div class="col-12"><small class="text-muted">รายละเอียด</small><div id="cancelDetail" class="text-break"></div></div>
+              <div class="col-6"><small class="text-muted">สัตว์เลี้ยง</small>
+                <div id="cancelPet" class="fw-semibold"></div>
+              </div>
+              <div class="col-6"><small class="text-muted">เจ้าของ</small>
+                <div id="cancelOwner"></div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">เบอร์โทรศัพท์</small>
+                <div id="cancelPhone">-</div>
+              </div>
+              <div class="col-6"><small class="text-muted">วันที่</small>
+                <div id="cancelDate"></div>
+              </div>
+              <div class="col-6"><small class="text-muted">เวลา</small>
+                <div id="cancelTime"></div>
+              </div>
+              <div class="col-6"><small class="text-muted">หัวข้อ</small>
+                <div id="cancelTitle"></div>
+              </div>
+              <div class="col-6"><small class="text-muted">ประเภท</small>
+                <div id="cancelType"></div>
+              </div>
+              <div class="col-12"><small class="text-muted">สัตวแพทย์</small>
+                <div id="cancelVet"></div>
+              </div>
+              <div class="col-12"><small class="text-muted">รายละเอียด</small>
+                <div id="cancelDetail" class="text-break"></div>
+              </div>
             </div>
             <label for="cancelReason" class="form-label fw-semibold">เหตุผลในการยกเลิก <span class="text-danger">*</span></label>
             <textarea name="status_detail" id="cancelReason" class="form-control" rows="3" maxlength="1000" placeholder="ระบุเหตุผลในการยกเลิกนัดหมาย" required></textarea>
@@ -466,11 +566,11 @@
     </div>
   </div>
 
-  <div id="appointmentData"
-    data-busy-appointments="<%= JSON.stringify(busyAppointments || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') %>">
+  <div id="appointmentData" data-busy-appointments="<%= JSON.stringify(busyAppointments || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') %>">
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const createForm = document.getElementById('createAppointmentForm');
@@ -505,6 +605,11 @@
       let bookedTimes = [];
       let requestId = 0;
       let scheduleLoaded = false;
+
+      function showText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value || '-';
+      }
 
       function showCreateMessage(text, isError = false) {
         createMessage.textContent = text;
@@ -594,13 +699,13 @@
           const completedTimes = (data.completed || []).map(time => String(time).slice(0, 5));
           scheduleLoaded = true;
 
-          completedBox.textContent = completedTimes.length
-            ? `นัดที่เสร็จแล้ว: ${completedTimes.map(time => time + ' น.').join(', ')}`
-            : 'ยังไม่มีนัดที่เสร็จแล้วในวันนี้';
+          completedBox.textContent = completedTimes.length ?
+            `นัดที่เสร็จแล้ว: ${completedTimes.map(time => time + ' น.').join(', ')}` :
+            'ยังไม่มีนัดที่เสร็จแล้วในวันนี้';
 
-          bookedBox.textContent = bookedTimes.length
-            ? `เวลาที่มีการจองอยู่: ${bookedTimes.map(time => time + ' น.').join(', ')}`
-            : 'ยังไม่มีนัดที่กำลังจองในวันนี้';
+          bookedBox.textContent = bookedTimes.length ?
+            `เวลาที่มีการจองอยู่: ${bookedTimes.map(time => time + ' น.').join(', ')}` :
+            'ยังไม่มีนัดที่กำลังจองในวันนี้';
 
           checkSelectedTime();
         } catch (error) {
@@ -649,16 +754,11 @@
 
         petSelect.value = '';
         petSelect.disabled = !ownerId;
-        petSelect.options[0].textContent = !ownerId
-          ? '-- เลือก PetOwner ก่อน --'
-          : visibleCount
-            ? '-- เลือกสัตว์เลี้ยง --'
-            : '-- ไม่พบสัตว์เลี้ยง --';
-      }
-
-      function showText(id, value) {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value || '-';
+        petSelect.options[0].textContent = !ownerId ?
+          '-- เลือก PetOwner ก่อน --' :
+          visibleCount ?
+          '-- เลือกสัตว์เลี้ยง --' :
+          '-- ไม่พบสัตว์เลี้ยง --';
       }
 
       function filterAppointments() {
@@ -674,6 +774,7 @@
         });
 
         const emptyState = currentGroup?.querySelector('.empty-state');
+
         if (emptyState) {
           emptyState.classList.toggle('d-none', query.length > 0);
         }
@@ -771,6 +872,7 @@
 
       document.getElementById('appointmentSearch').addEventListener('input', filterAppointments);
 
+      // Appointment Detail Modal
       document.querySelectorAll('.detail-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
@@ -778,6 +880,7 @@
           showText('modalTitle', data.title);
           showText('modalPet', data.pet);
           showText('modalOwner', data.owner);
+          showText('modalPhone', data.phone);
           showText('modalDate', data.date);
           showText('modalTime', data.time);
           showText('modalType', data.type);
@@ -793,6 +896,7 @@
           };
 
           showText('modalStatus', labels[data.status] || data.status);
+
           document.getElementById('modalStatusDetailContainer').classList.toggle(
             'd-none',
             !data.statusDetail || data.statusDetail === '-'
@@ -800,171 +904,369 @@
         });
       });
 
-      const appointmentData = document.getElementById('appointmentData');
-      let busyAppointments = [];
+      // Confirm Appointment
+      const confirmVet = document.getElementById('confirmVet');
+      const confirmDateInput = document.getElementById('confirmDateInput');
+      const confirmTimeSelect = document.getElementById('confirmTimeSelect');
+      const confirmScheduleBody = document.getElementById('confirmScheduleBody');
+      const confirmScheduleMessage = document.getElementById('confirmScheduleMessage');
+      const confirmTimeMessage = document.getElementById('confirmTimeMessage');
+      const confirmModal = document.getElementById('confirmModal');
+      const confirmForm = document.getElementById('confirmForm');
+      const confirmSubmit = document.getElementById('confirmSubmit');
+      const confirmError = document.getElementById('confirmError');
+      const confirmErrorMessage = document.getElementById('confirmErrorMessage');
 
-      try {
-        busyAppointments = JSON.parse(appointmentData.dataset.busyAppointments || '[]');
-      } catch (error) {
-        busyAppointments = [];
+      let confirmAppointments = [];
+      let confirmScheduleLoaded = false;
+      let confirmRequestId = 0;
+
+      const confirmToday = new Date();
+
+      confirmDateInput.min = [
+        confirmToday.getFullYear(),
+        String(confirmToday.getMonth() + 1).padStart(2, '0'),
+        String(confirmToday.getDate()).padStart(2, '0')
+      ].join('-');
+
+      function confirmToMinutes(time) {
+        const [hour, minute] = time.split(':').map(Number);
+        return hour * 60 + minute;
       }
 
+      function showConfirmTimeMessage(message, isError = false) {
+        confirmTimeMessage.textContent = message;
+        confirmTimeMessage.className = `small mt-2 ${isError ? 'text-danger' : 'text-success'}`;
+      }
+
+      function showConfirmError(message) {
+        confirmErrorMessage.textContent = message;
+        confirmError.classList.remove('d-none');
+      }
+
+      function clearConfirmError() {
+        confirmErrorMessage.textContent = '';
+        confirmError.classList.add('d-none');
+      }
+
+      function showConfirmScheduleRows() {
+        confirmScheduleBody.innerHTML = '';
+
+        if (!confirmAppointments.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+
+          cell.colSpan = 2;
+          cell.className = 'text-center text-muted';
+          cell.textContent = 'ไม่มีนัดหมายในวันนี้';
+
+          row.appendChild(cell);
+          confirmScheduleBody.appendChild(row);
+          return;
+        }
+
+        const statusLabels = {
+          pending: 'Pending',
+          confirmed: 'Confirmed',
+          completed: 'Completed'
+        };
+
+        confirmAppointments.forEach(appointment => {
+          const row = document.createElement('tr');
+          const timeCell = document.createElement('td');
+          const statusCell = document.createElement('td');
+          const badge = document.createElement('span');
+
+          timeCell.textContent = `${appointment.time} น.`;
+          badge.className = appointment.status === 'pending' ?
+            'badge text-bg-warning' :
+            appointment.status === 'confirmed' ?
+            'badge text-bg-success' :
+            'badge text-bg-secondary';
+
+          badge.textContent = statusLabels[appointment.status] || appointment.status;
+          statusCell.appendChild(badge);
+          row.appendChild(timeCell);
+          row.appendChild(statusCell);
+          confirmScheduleBody.appendChild(row);
+        });
+      }
+
+      function checkConfirmSelectedTime() {
+        const vetId = confirmVet.value;
+        const date = confirmDateInput.value;
+        const time = confirmTimeSelect.value;
+
+        if (!vetId || !date || !time) {
+          showConfirmTimeMessage('');
+          return false;
+        }
+
+        if (!confirmScheduleLoaded) {
+          showConfirmTimeMessage('กรุณารอให้ระบบโหลดตารางนัดก่อน', true);
+          return false;
+        }
+
+        const selectedDateTime = new Date(`${date}T${time}:00`);
+
+        if (Number.isNaN(selectedDateTime.getTime()) || selectedDateTime < new Date()) {
+          showConfirmTimeMessage('วันและเวลาที่เลือกผ่านมาแล้ว กรุณาเลือกใหม่', true);
+          return false;
+        }
+
+        const selectedMinutes = confirmToMinutes(time);
+
+        const conflict = confirmAppointments.find(appointment =>
+          Math.abs(confirmToMinutes(appointment.time) - selectedMinutes) < 30
+        );
+
+        if (conflict) {
+          showConfirmTimeMessage(
+            `เวลา ${time} น. ชนกับนัดเวลา ${conflict.time} น. (${conflict.status})`,
+            true
+          );
+          return false;
+        }
+
+        showConfirmTimeMessage(`เวลา ${time} น. สามารถเลือกได้`);
+        return true;
+      }
+
+      async function loadConfirmSchedule() {
+        const currentRequest = ++confirmRequestId;
+        const vetId = confirmVet.value;
+        const date = confirmDateInput.value;
+        const appointmentId = document.getElementById('confirmId').value;
+
+        confirmAppointments = [];
+        confirmScheduleLoaded = false;
+        confirmScheduleMessage.textContent = 'กำลังโหลดตารางนัด...';
+        confirmScheduleMessage.className = 'small text-muted mb-2';
+
+        confirmScheduleBody.innerHTML = `
+      <tr>
+        <td colspan="2" class="text-center text-muted">กำลังโหลด...</td>
+      </tr>
+    `;
+
+        showConfirmTimeMessage('');
+
+        if (!vetId || !date) {
+          confirmScheduleMessage.textContent = 'เลือกสัตวแพทย์และวันที่เพื่อดูตารางนัด';
+          confirmScheduleBody.innerHTML = `
+        <tr>
+          <td colspan="2" class="text-center text-muted">ยังไม่มีข้อมูลตารางนัด</td>
+        </tr>
+      `;
+          return;
+        }
+
+        try {
+          const params = new URLSearchParams({
+            vet_id: vetId,
+            appointment_date: date,
+            exclude_appointment_id: appointmentId
+          });
+
+          const response = await fetch(`/appointments/vet-schedule?${params}`);
+
+          if (!response.ok) {
+            throw new Error('โหลดตารางนัดไม่สำเร็จ');
+          }
+
+          const data = await response.json();
+
+          if (currentRequest !== confirmRequestId) return;
+
+          confirmAppointments = (data.appointments || []).map(appointment => ({
+            time: String(appointment.time).slice(0, 5),
+            status: appointment.status
+          }));
+
+          confirmScheduleLoaded = true;
+          confirmScheduleMessage.textContent = confirmAppointments.length ?
+            `พบรายการนัดหมาย ${confirmAppointments.length} รายการ` :
+            'ยังไม่มีนัดหมายในวันที่เลือก';
+
+          confirmScheduleMessage.className = 'small text-muted mb-2';
+
+          showConfirmScheduleRows();
+          checkConfirmSelectedTime();
+        } catch (error) {
+          if (currentRequest !== confirmRequestId) return;
+
+          confirmScheduleLoaded = false;
+          confirmScheduleMessage.textContent = 'ไม่สามารถโหลดตารางนัดได้';
+          confirmScheduleMessage.className = 'small text-danger mb-2';
+
+          confirmScheduleBody.innerHTML = `
+        <tr>
+          <td colspan="2" class="text-center text-danger">กรุณาลองใหม่อีกครั้ง</td>
+        </tr>
+      `;
+
+          showConfirmTimeMessage('ตรวจสอบตารางนัดไม่ได้ จึงยังไม่สามารถยืนยันเวลาได้', true);
+        }
+      }
+
+      confirmVet.addEventListener('change', loadConfirmSchedule);
+      confirmDateInput.addEventListener('change', loadConfirmSchedule);
+      confirmTimeSelect.addEventListener('change', checkConfirmSelectedTime);
+
+      // โหลดข้อมูลลง Confirm Modal
       document.querySelectorAll('.confirm-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
-          showText('confirmId', data.id);
-          document.getElementById('confirmId').value = data.id;
+
+          document.getElementById('confirmId').value = data.id || '';
+
           showText('confirmPet', data.pet);
           showText('confirmOwner', data.owner);
+          showText('confirmPhone', data.phone);
           showText('confirmDate', data.date);
           showText('confirmTime', data.time);
           showText('confirmTitle', data.title);
           showText('confirmType', data.type);
           showText('confirmDetail', data.detail);
 
-          const select = document.getElementById('confirmVet');
-          const availabilityMessage = document.getElementById('vetAvailabilityMessage');
-          const submit = document.getElementById('confirmSubmit');
+          confirmVet.value = '';
+          confirmDateInput.value = data.date || '';
+          confirmTimeSelect.value = data.time || '';
 
-          select.value = '';
-          let availableCount = 0;
+          confirmAppointments = [];
+          confirmScheduleLoaded = false;
+          confirmScheduleMessage.textContent = 'เลือกสัตวแพทย์เพื่อดูตารางนัด';
 
-          Array.from(select.options).forEach(option => {
-            if (!option.value) {
-              option.hidden = false;
-              option.disabled = false;
-              return;
-            }
+          confirmScheduleBody.innerHTML = `
+        <tr>
+          <td colspan="2" class="text-center text-muted">กรุณาเลือกสัตวแพทย์</td>
+        </tr>
+      `;
 
-            const busy = busyAppointments.some(appointment =>
-              String(appointment.vet_id) === option.value &&
-              appointment.appointment_date === data.date &&
-              String(appointment.appointment_time || '').slice(0, 5) === data.time
-            );
-
-            option.hidden = busy;
-            option.disabled = busy;
-            if (!busy) availableCount++;
-          });
-
-          availabilityMessage.textContent = availableCount
-            ? 'เลือกได้เฉพาะสัตวแพทย์ที่ไม่มีนัดในวันและเวลาเดียวกัน'
-            : 'ไม่มีสัตวแพทย์ว่างในวันและเวลานี้ กรุณาตรวจสอบนัดหมาย';
-
-          availabilityMessage.className = availableCount
-            ? 'form-text text-muted'
-            : 'form-text text-danger';
-
-          submit.disabled = availableCount === 0;
+          showConfirmTimeMessage('');
+          clearConfirmError();
+          confirmSubmit.disabled = false;
         });
       });
 
+      confirmForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        clearConfirmError();
+
+        if (!confirmVet.value) {
+          showConfirmError('กรุณาเลือกสัตวแพทย์');
+          confirmVet.focus();
+          return;
+        }
+
+        if (!confirmDateInput.value) {
+          showConfirmError('กรุณาเลือกวันที่นัด');
+          confirmDateInput.focus();
+          return;
+        }
+
+        if (!confirmTimeSelect.value) {
+          showConfirmError('กรุณาเลือกเวลานัด');
+          confirmTimeSelect.focus();
+          return;
+        }
+
+        if (!confirmScheduleLoaded) {
+          showConfirmError('กรุณารอให้ระบบโหลดตารางนัดก่อนยืนยัน');
+          return;
+        }
+
+        if (!checkConfirmSelectedTime()) {
+          showConfirmError(confirmTimeMessage.textContent || 'วันและเวลาไม่สามารถเลือกได้');
+          confirmTimeSelect.focus();
+          return;
+        }
+
+        confirmSubmit.disabled = true;
+        confirmSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังยืนยัน...';
+
+        try {
+          const response = await fetch(confirmForm.action, {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(confirmForm)),
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            showConfirmError(data.message || 'ไม่สามารถยืนยันนัดหมายได้');
+            return;
+          }
+
+          window.location.href = data.redirect || '/appointments';
+        } catch (error) {
+          console.error('Confirm appointment error:', error);
+          showConfirmError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+        } finally {
+          confirmSubmit.disabled = false;
+          confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
+        }
+      });
+
+      confirmModal.addEventListener('hidden.bs.modal', () => {
+        confirmRequestId++;
+        confirmAppointments = [];
+        confirmScheduleLoaded = false;
+        clearConfirmError();
+        confirmSubmit.disabled = false;
+        confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
+      });
+
+      // Cancel Appointment Modal
       document.querySelectorAll('.cancel-button').forEach(button => {
         button.addEventListener('click', () => {
           const data = button.dataset;
 
-          document.getElementById('cancelId').value = data.id;
+          document.getElementById('cancelId').value = data.id || '';
+
           showText('cancelPet', data.pet);
           showText('cancelOwner', data.owner);
+          showText('cancelPhone', data.phone);
           showText('cancelDate', data.date);
           showText('cancelTime', data.time);
           showText('cancelTitle', data.title);
           showText('cancelType', data.type);
           showText('cancelVet', data.vet);
           showText('cancelDetail', data.detail);
+
           document.getElementById('cancelReason').value = '';
+          document.getElementById('cancelReason').setCustomValidity('');
         });
       });
 
+      // ตรวจสอบเหตุผลก่อนยกเลิก
+      const cancelForm = document.getElementById('cancelForm');
+      const cancelReason = document.getElementById('cancelReason');
 
+      cancelForm.addEventListener('submit', event => {
+        cancelReason.value = cancelReason.value.trim();
 
-      document.getElementById('cancelForm').addEventListener('submit', event => {
-        const reason = document.getElementById('cancelReason');
-        reason.value = reason.value.trim();
-
-        if (!reason.value) {
+        if (!cancelReason.value) {
           event.preventDefault();
-          reason.setCustomValidity('กรุณาระบุเหตุผลในการยกเลิก');
-          reason.reportValidity();
-          reason.focus();
+          cancelReason.setCustomValidity('กรุณาระบุเหตุผลในการยกเลิก');
+          cancelReason.reportValidity();
+          cancelReason.focus();
           return;
         }
 
-        reason.setCustomValidity('');
+        cancelReason.setCustomValidity('');
       });
 
-      document.getElementById('cancelReason').addEventListener('input', event => {
-        event.target.setCustomValidity('');
+      cancelReason.addEventListener('input', () => {
+        cancelReason.setCustomValidity('');
       });
     });
   </script>
 
-<script>
-  const confirmForm = document.getElementById('confirmForm');
-  const confirmSubmit = document.getElementById('confirmSubmit');
-  const confirmError = document.getElementById('confirmError');
-  const confirmErrorMessage = document.getElementById('confirmErrorMessage');
-
-  function showConfirmError(message) {
-    confirmErrorMessage.textContent = message;
-    confirmError.classList.remove('d-none');
-  }
-
-  function clearConfirmError() {
-    confirmErrorMessage.textContent = '';
-    confirmError.classList.add('d-none');
-  }
-
-  confirmForm.addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const select = document.getElementById('confirmVet');
-
-    clearConfirmError();
-
-    if (!select.value || select.selectedOptions[0].disabled) {
-      showConfirmError('กรุณาเลือกสัตวแพทย์ที่ว่าง');
-      select.focus();
-      return;
-    }
-
-    confirmSubmit.disabled = true;
-    confirmSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังยืนยัน...';
-
-    try {
-      const response = await fetch(confirmForm.action, {
-        method: 'POST',
-        body: new URLSearchParams(new FormData(confirmForm)),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        showConfirmError(data.message || 'ไม่สามารถยืนยันนัดหมายได้');
-        return;
-      }
-
-      window.location.href = data.redirect;
-
-    } catch (error) {
-      console.error('Confirm appointment error:', error);
-      showConfirmError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
-
-    } finally {
-      confirmSubmit.disabled = false;
-      confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
-    }
-  });
-
-  document.getElementById('confirmModal').addEventListener('hidden.bs.modal', () => {
-    clearConfirmError();
-    confirmSubmit.disabled = false;
-    confirmSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i>ยืนยันนัดหมาย';
-  });
-</script>
 </body>
+
 </html>
