@@ -29,92 +29,14 @@ PetOwner เพิ่่มฟอร์มกรอกเบอร์
 
 
 Appointment กด Pending ยอมรับ เพิ่ม ปฎิเสธ เพิ่ม ErrorMsg ใน UI
-
-
 Walk In ล็อควันเวลาให้เลย
+
 Receipt ทำ PDF ให้โหลด
+
 Sort Appoinment
 Receipt ทำเอกสารไม่ได้ถ้ายังไม่ทำ Treatment
 เพิ่มกรอง Treatment vets
 Receipt ยังไม่มีการตรวจสอบสินค้าหมดอายุ
 Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว
 
-create table public.appointments (
-  appointment_id bigint generated always as identity not null,
-  pet_id bigint not null,
-  vet_id bigint null,
-  clinic_staff_id bigint null,
-  appointment_date date not null,
-  appointment_time time without time zone not null,
-  detail text null,
-  status character varying(20) not null default 'pending'::character varying,
-  created_at timestamp with time zone not null default now(),
-  updated_at timestamp with time zone not null default now(),
-  status_detail text null,
-  type character varying(50) null,
-  title character varying(255) null,
-  constraint appointments_pkey primary key (appointment_id),
-  constraint appointments_pet_id_fkey foreign KEY (pet_id) references pets (pet_id) on delete CASCADE,
-  constraint appointments_vet_id_fkey foreign KEY (vet_id) references vets (vet_id) on delete set null,
-  constraint appointments_clinic_staff_id_fkey foreign KEY (clinic_staff_id) references clinic_staff (clinic_staff_id) on delete set null,
-  constraint appointments_status_check check (
-    (
-      (status)::text = any (
-        (
-          array[
-            'pending'::character varying,
-            'confirmed'::character varying,
-            'cancelled'::character varying,
-            'completed'::character varying
-          ]
-        )::text[]
-      )
-    )
-  ),
-  constraint appointments_title_check check (
-    (
-      (title is null)
-      or (
-        (title)::text = any (
-          array[
-            'Health Checkup'::text,
-            'Vaccination'::text,
-            'Sick Visit / Consultation'::text,
-            'Spay / Neuter'::text,
-            'Grooming'::text,
-            'Bathing'::text,
-            'Haircut'::text,
-            'Boarding'::text,
-            'Grooming / Boarding'::text
-          ]
-        )
-      )
-    )
-  ),
-  constraint appointments_type_check check (
-    (
-      (type is null)
-      or (
-        (type)::text = any (
-          array[
-            'Walk-in'::text,
-            'Follow-up'::text,
-            'Appointment'::text,
-            'Surgery / Procedure'::text,
-            'Treatment / Wound Care'::text
-          ]
-        )
-      )
-    )
-  )
-) TABLESPACE pg_default;
 
-create index IF not exists appointments_pet_id_idx on public.appointments using btree (pet_id) TABLESPACE pg_default;
-
-create index IF not exists appointments_vet_id_idx on public.appointments using btree (vet_id) TABLESPACE pg_default;
-
-create index IF not exists appointments_date_idx on public.appointments using btree (appointment_date) TABLESPACE pg_default;
-
-create trigger update_appointments_updated_at BEFORE
-update on appointments for EACH row
-execute FUNCTION update_updated_at_column ();
