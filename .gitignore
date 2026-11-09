@@ -15,7 +15,7 @@ node_modules
 
 
 
-//Todo (ยังไม่ได้ทำ)
+//Todo (ทำแล้ว)
 ทำเมลส่ง Member ตอนDel ตอนAdd
 email ซ้ำของ Member
 PetOwner เพิ่่มฟอร์มกรอกเบอร์
@@ -23,20 +23,21 @@ PetOwner เพิ่่มฟอร์มกรอกเบอร์
 ทำหน้ากดดูรายละเอียด IPD.Admitplan
 แก้ตอน Add วัน IPD.Admitplan ให้ล็อคเวลา ทุก30 นาที
 ทำหน้ากดดูรายละเอียด Stock Appointment 
-
-
-
-
-
-Appointment กด Pending ยอมรับ เพิ่ม ปฎิเสธ เพิ่ม ErrorMsg ใน UI
+Appointment กด Pending เลือกเวลาใหม่
 Walk In ล็อควันเวลาให้เลย
-
-Receipt ทำ PDF ให้โหลด
-
-Sort Appoinment
 Receipt ทำเอกสารไม่ได้ถ้ายังไม่ทำ Treatment
-เพิ่มกรอง Treatment vets
+เพิ่มกรอง Treatment ให้ Vets Clinic ClinicStaff
+Sort Appoinment
+Treatment PopUP ตอนจบการรักษา
+
+
+
+//Todo (ยังไม่ได้ทำ)
+Receipt ทำ PDF ให้โหลด
 Receipt ยังไม่มีการตรวจสอบสินค้าหมดอายุ
 Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว
+Error Msg ตอน Receipt
+
+Vet Class 1/2 สามารถทำไรได้บ้าง
 
 

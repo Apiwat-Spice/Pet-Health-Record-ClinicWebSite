@@ -24,33 +24,161 @@
         <% if (locals.success) { %>
           <div class="alert alert-success"><%= success %></div>
         <% } %>
-        <div class="card border-0 shadow-sm mb-4">
-          <div class="card-body">
-            <% if (role === 'clinic') { %>
-              <form action="/treatments" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-6">
-                  <label class="form-label">เลือกสัตวแพทย์</label>
-                  <select name="vet_id" class="form-select">
-                    <option value="">สัตวแพทย์ทุกคน</option>
-                    <% vets.forEach(v => { %>
-                      <option value="<%= v.vet_id %>" <%= String(selectedVet) === String(v.vet_id) ? 'selected' : '' %>>
-                        <%= v.first_name %> <%= v.last_name %>
-                      </option>
-                    <% }) %>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <button class="btn btn-primary w-100"><i class="fa-solid fa-filter me-1"></i>ค้นหา</button>
-                </div>
-              </form>
-             <% } else if (role === 'vet') { %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <div>
+        <h6 class="fw-bold mb-1">
+          <i class="fa-solid fa-filter text-primary me-2"></i>
+          ตัวกรองการรักษา
+        </h6>
+        <small class="text-muted">
+          เลือกสัตวแพทย์ สถานะ และการเรียงข้อมูล
+        </small>
+      </div>
+    </div>
+
+    <% if (role === 'clinic' || role === 'clinic_staff') { %>
+
+      <!-- Status Navbar -->
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a
+          href="/treatments?vet_id=<%= selectedVet || '' %>&status=&sort=<%= selectedSort %>"
+          class="btn btn-sm <%= !selectedStatus ? 'btn-primary' : 'btn-outline-primary' %>">
+          <i class="fa-solid fa-list me-1"></i>
+          ทั้งหมด
+        </a>
+
+        <a
+          href="/treatments?vet_id=<%= selectedVet || '' %>&status=completed&sort=<%= selectedSort %>"
+          class="btn btn-sm <%= selectedStatus === 'completed' ? 'btn-success' : 'btn-outline-success' %>">
+          Completed
+        </a>
+
+        <a
+          href="/treatments?vet_id=<%= selectedVet || '' %>&status=confirmed&sort=<%= selectedSort %>"
+          class="btn btn-sm <%= selectedStatus === 'confirmed' ? 'btn-primary' : 'btn-outline-primary' %>">
+          Confirmed
+        </a>
+
+        <a
+          href="/treatments?vet_id=<%= selectedVet || '' %>&status=cancelled&sort=<%= selectedSort %>"
+          class="btn btn-sm <%= selectedStatus === 'cancelled' ? 'btn-danger' : 'btn-outline-danger' %>">
+          Cancelled
+        </a>
+      </div>
+
+      <!-- Vet + Sort Filter -->
+      <form action="/treatments" method="GET" class="row g-3 align-items-end">
+
+        <input
+          type="hidden"
+          name="status"
+          value="<%= selectedStatus || '' %>">
+
+        <div class="col-md-5">
+          <label class="form-label">เลือกสัตวแพทย์</label>
+
+          <select name="vet_id" class="form-select">
+            <option value="">สัตวแพทย์ทุกคน</option>
+
+            <% vets.forEach(v => { %>
+              <option
+                value="<%= v.vet_id %>"
+                <%= String(selectedVet || '') === String(v.vet_id) ? 'selected' : '' %>>
+                <%= v.first_name %> <%= v.last_name %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">เรียงข้อมูล</label>
+
+          <select name="sort" class="form-select">
+            <option
+              value="desc"
+              <%= selectedSort === 'desc' ? 'selected' : '' %>>
+              ล่าสุด → เก่าสุด
+            </option>
+
+            <option
+              value="asc"
+              <%= selectedSort === 'asc' ? 'selected' : '' %>>
+              เก่าสุด → ล่าสุด
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fa-solid fa-filter me-1"></i>
+            ค้นหา
+          </button>
+        </div>
+
+        <div class="col-md-2">
+          <a href="/treatments" class="btn btn-outline-secondary w-100">
+            <i class="fa-solid fa-rotate-left me-1"></i>
+            ล้าง
+          </a>
+        </div>
+
+      </form>
+
+<% } else if (role === 'vet') { %>
+  <!-- Vet Status Filter -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a
+      href="/treatments?status=&sort=<%= selectedSort %>"
+      class="btn btn-sm <%= !selectedStatus ? 'btn-primary' : 'btn-outline-primary' %>">
+      <i class="fa-solid fa-list me-1"></i>
+      ทั้งหมด
+    </a>
+
+    <a
+      href="/treatments?status=completed&sort=<%= selectedSort %>"
+      class="btn btn-sm <%= selectedStatus === 'completed' ? 'btn-success' : 'btn-outline-success' %>">
+      Completed
+    </a>
+
+    <a
+      href="/treatments?status=confirmed&sort=<%= selectedSort %>"
+      class="btn btn-sm <%= selectedStatus === 'confirmed' ? 'btn-primary' : 'btn-outline-primary' %>">
+      Confirmed
+    </a>
+
+    <a
+      href="/treatments?status=cancelled&sort=<%= selectedSort %>"
+      class="btn btn-sm <%= selectedStatus === 'cancelled' ? 'btn-danger' : 'btn-outline-danger' %>">
+      Cancelled
+    </a>
+  </div>
+
+  <!-- Vet Sort Filter -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center">
     <div class="text-muted">
       <i class="fa-solid fa-user-doctor me-1"></i>
       แสดงข้อมูลการรักษาของคุณ
     </div>
-  <% } %>
-          </div>
-        </div>
+
+    <div class="d-flex gap-2">
+      <a
+        href="/treatments?status=<%= selectedStatus || '' %>&sort=desc"
+        class="btn btn-sm <%= selectedSort === 'desc' ? 'btn-primary' : 'btn-outline-primary' %>">
+        <i class="fa-solid fa-arrow-down me-1"></i>
+        ล่าสุด
+      </a>
+
+      <a
+        href="/treatments?status=<%= selectedStatus || '' %>&sort=asc"
+        class="btn btn-sm <%= selectedSort === 'asc' ? 'btn-primary' : 'btn-outline-primary' %>">
+        <i class="fa-solid fa-arrow-up me-1"></i>
+        เก่าสุด
+      </a>
+    </div>
+  </div>
+<% } %>
         <div class="card border-0 shadow-sm">
           <div class="card-body">
             <div class="table-responsive">

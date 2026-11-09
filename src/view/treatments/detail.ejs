@@ -23,29 +23,46 @@
       <main class="col-md-9 col-lg-10 p-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
-            <a href="/treatments" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>กลับไปหน้า Treatment</a>
-            <h2 class="fw-bold mt-2 mb-1"><i class="fa-solid fa-file-medical text-primary me-2"></i>Treatment Record</h2>
+            <a href="/treatments" class="text-decoration-none text-muted small">
+              <i class="fa-solid fa-arrow-left me-1"></i>กลับไปหน้า Treatment
+            </a>
+            <h2 class="fw-bold mt-2 mb-1">
+              <i class="fa-solid fa-file-medical text-primary me-2"></i>Treatment Record
+            </h2>
             <p class="text-muted mb-0">บันทึกและตรวจสอบข้อมูลการรักษา</p>
           </div>
           <% if (role === 'clinic' || record?.status === 'Finish' || record?.status === 'Completed') { %>
-            <span class="badge text-bg-secondary"><i class="fa-solid fa-eye me-1"></i>Read Only</span>
+            <span class="badge text-bg-secondary">
+              <i class="fa-solid fa-eye me-1"></i>Read Only
+            </span>
           <% } else if (role === 'vet' && record?.status === 'Ready') { %>
-            <span class="badge text-bg-primary"><i class="fa-solid fa-pen-to-square me-1"></i>Editable</span>
+            <span class="badge text-bg-primary">
+              <i class="fa-solid fa-pen-to-square me-1"></i>Editable
+            </span>
           <% } %>
         </div>
+
         <% if (locals.error) { %>
-          <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-2"></i><%= error %></div>
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
+          </div>
         <% } %>
+
         <% if (locals.success || (typeof querySaved !== 'undefined' && querySaved)) { %>
-          <div class="alert alert-success"><i class="fa-solid fa-check-circle me-2"></i>บันทึกข้อมูลเรียบร้อยแล้ว</div>
+          <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle me-2"></i>บันทึกข้อมูลเรียบร้อยแล้ว
+          </div>
         <% } %>
+
         <div class="card border-0 shadow-sm mb-4">
           <div class="card-body">
             <div class="d-flex align-items-center gap-3 mb-4">
               <div class="pet-icon"><i class="fa-solid fa-paw"></i></div>
               <div>
                 <h5 class="fw-bold mb-1"><%= pet.name || pet.pet_name || '-' %></h5>
-                <div class="text-muted small">Appointment #<%= appointment.appointment_id %> · <%= pet.species || pet.animal_type || '-' %></div>
+                <div class="text-muted small">
+                  Appointment #<%= appointment.appointment_id %> · <%= pet.species || pet.animal_type || '-' %>
+                </div>
               </div>
               <div class="ms-auto">
                 <% if (appointment.status === 'completed') { %>
@@ -59,6 +76,7 @@
                 <% } %>
               </div>
             </div>
+
             <div class="row g-3">
               <div class="col-md-3">
                 <div class="info-label">เจ้าของสัตว์</div>
@@ -79,6 +97,7 @@
             </div>
           </div>
         </div>
+
         <ul class="nav nav-tabs mb-4">
           <li class="nav-item">
             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#recordTab" type="button">
@@ -91,8 +110,11 @@
             </button>
           </li>
         </ul>
+
         <div class="tab-content">
           <div class="tab-pane fade show active" id="recordTab">
+            <% const editable = role === 'vet' && record?.status === 'Ready'; %>
+
             <% if (!record) { %>
               <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-5">
@@ -102,7 +124,7 @@
                 </div>
               </div>
             <% } else { %>
-              <% const editable = role === 'vet' && record.status === 'Ready'; %>
+
               <form action="/treatments/<%= appointment.appointment_id %>/save" method="POST" id="treatmentForm">
                 <div class="card border-0 shadow-sm mb-4">
                   <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -115,6 +137,7 @@
                       <span class="badge text-bg-secondary"><%= record.status %></span>
                     <% } %>
                   </div>
+
                   <div class="card-body">
                     <div class="row g-3 mb-4">
                       <div class="col-md-4">
@@ -123,54 +146,109 @@
                       </div>
                       <div class="col-md-4">
                         <div class="info-label">เวลาเข้า</div>
-                        <div class="info-value"><%= record.visit_date || '-' %> <%= String(record.visit_time || '').slice(0,8) %></div>
+                        <div class="info-value">
+                          <%= record.visit_date || '-' %> <%= String(record.visit_time || '').slice(0,8) %>
+                        </div>
                       </div>
                       <div class="col-md-4">
                         <div class="info-label">สถานะ Visit Record</div>
                         <div class="info-value"><%= record.status %></div>
                       </div>
                     </div>
+
                     <% if (!editable) { %>
                       <div class="alert alert-secondary">
                         <i class="fa-solid fa-lock me-2"></i>
                         Visit Record นี้เป็นโหมดดูอย่างเดียว ไม่สามารถแก้ไขข้อมูลได้
                       </div>
                     <% } %>
+
                     <div class="mb-3">
-                      <label class="form-label fw-semibold">Symptoms <span class="text-muted fw-normal">(อาการ)</span></label>
+                      <label class="form-label fw-semibold">
+                        Symptoms <span class="text-muted fw-normal">(อาการ)</span>
+                      </label>
                       <textarea name="symptoms" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.symptoms || '' %></textarea>
                     </div>
+
                     <div class="mb-3">
-                      <label class="form-label fw-semibold">Diagnosis <span class="text-muted fw-normal">(การวินิจฉัย)</span></label>
+                      <label class="form-label fw-semibold">
+                        Diagnosis <span class="text-muted fw-normal">(การวินิจฉัย)</span>
+                      </label>
                       <textarea name="diagnosis" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.diagnosis || '' %></textarea>
                     </div>
+
                     <div class="mb-3">
-                      <label class="form-label fw-semibold">Treatment <span class="text-muted fw-normal">(การรักษา)</span></label>
+                      <label class="form-label fw-semibold">
+                        Treatment <span class="text-muted fw-normal">(การรักษา)</span>
+                      </label>
                       <textarea name="treatment" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.treatment || '' %></textarea>
                     </div>
+
                     <div class="mb-3">
                       <label class="form-label fw-semibold">Note</label>
                       <textarea name="note" class="form-control" rows="3" <%= editable ? '' : 'readonly' %>><%= record.note || '' %></textarea>
                       <% if (editable) { %>
-                        <div class="form-text">ตรวจสอบข้อมูลให้เรียบร้อยก่อนบันทึก การบันทึกจะเปลี่ยนสถานะเป็น Finish และไม่สามารถแก้ไขได้อีก</div>
+                        <div class="form-text">
+                          ตรวจสอบข้อมูลให้เรียบร้อยก่อนบันทึก การบันทึกจะเปลี่ยนสถานะเป็น Finish และไม่สามารถแก้ไขได้อีก
+                        </div>
                       <% } %>
                     </div>
                   </div>
                 </div>
+
                 <% if (editable) { %>
-                  <div class="d-flex justify-content-end gap-2 mb-4">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('ยืนยันบันทึกและจบการรักษา? หลังบันทึกจะไม่สามารถแก้ไข Visit Record ได้อีก')">
+                  <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" class="btn btn-success px-4"
+                      data-bs-toggle="modal" data-bs-target="#confirmFinishModal">
                       <i class="fa-solid fa-check me-1"></i>บันทึกและจบการรักษา
                     </button>
                   </div>
                 <% } %>
               </form>
+
+              <% if (editable) { %>
+                <!-- Confirm Finish Modal -->
+                <div class="modal fade" id="confirmFinishModal" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                      <div class="modal-header border-0 pb-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body text-center px-4 pb-4">
+                        <div class="mb-3">
+                          <i class="fa-solid fa-circle-check text-success" style="font-size: 3.5rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">ยืนยันบันทึกและจบการรักษา?</h5>
+                        <p class="text-muted mb-3">
+                          คุณต้องการบันทึกข้อมูลการรักษานี้ใช่หรือไม่
+                        </p>
+                        <div class="alert alert-warning text-start small mb-4">
+                          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                          หลังจากบันทึกแล้ว Visit Record จะเปลี่ยนสถานะเป็น Finish และไม่สามารถแก้ไขข้อมูลได้อีก
+                        </div>
+                        <div class="d-flex justify-content-center gap-2">
+                          <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                            ยกเลิก
+                          </button>
+                          <button type="button" class="btn btn-success px-4" id="confirmFinishBtn">
+                            <i class="fa-solid fa-check me-1"></i>ยืนยันบันทึก
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% } %>
+
             <% } %>
           </div>
+
           <div class="tab-pane fade" id="historyTab">
             <div class="card border-0 shadow-sm">
               <div class="card-header bg-white py-3">
-                <h5 class="fw-bold mb-0">ประวัติการรักษาของ <%= pet.name || pet.pet_name || 'สัตว์ตัวนี้' %></h5>
+                <h5 class="fw-bold mb-0">
+                  ประวัติการรักษาของ <%= pet.name || pet.pet_name || 'สัตว์ตัวนี้' %>
+                </h5>
               </div>
               <div class="card-body">
                 <% if (!petHistory || !petHistory.length) { %>
@@ -183,15 +261,19 @@
                     <% petHistory.forEach((h, i) => { %>
                       <div class="accordion-item">
                         <h2 class="accordion-header">
-                          <button class="accordion-button <%= i === 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#history<%= i %>">
+                          <button class="accordion-button <%= i === 0 ? '' : 'collapsed' %>" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#history<%= i %>">
                             <span class="me-3">
                               <i class="fa-solid fa-calendar-day text-primary me-2"></i>
                               <%= h.visit_date || '-' %> <%= String(h.visit_time || '').slice(0,5) %>
                             </span>
-                            <span class="badge <%= h.status === 'Finish' || h.status === 'Completed' ? 'text-bg-success' : 'text-bg-primary' %>"><%= h.status || 'Ready' %></span>
+                            <span class="badge <%= h.status === 'Finish' || h.status === 'Completed' ? 'text-bg-success' : 'text-bg-primary' %>">
+                              <%= h.status || 'Ready' %>
+                            </span>
                           </button>
                         </h2>
-                        <div id="history<%= i %>" class="accordion-collapse collapse <%= i === 0 ? 'show' : '' %>" data-bs-parent="#historyAccordion">
+                        <div id="history<%= i %>" class="accordion-collapse collapse <%= i === 0 ? 'show' : '' %>"
+                          data-bs-parent="#historyAccordion">
                           <div class="accordion-body">
                             <div class="row g-3">
                               <div class="col-md-6">
@@ -222,6 +304,19 @@
       </main>
     </div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const confirmFinishBtn = document.getElementById('confirmFinishBtn');
+    const treatmentForm = document.getElementById('treatmentForm');
+
+    if (confirmFinishBtn && treatmentForm) {
+      confirmFinishBtn.addEventListener('click', () => {
+        confirmFinishBtn.disabled = true;
+        confirmFinishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังบันทึก...';
+        treatmentForm.submit();
+      });
+    }
+  </script>
 </body>
 </html>

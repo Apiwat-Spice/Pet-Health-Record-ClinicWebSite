@@ -20,68 +20,102 @@ async function getCurrentVet(req) {
   return data;
 }
 
-async function getPageData(req, vetFilter = '') {
+async function getPageData(
+  req,
+  vetFilter = '',
+  statusFilter = '',
+  sortOrder = 'desc',
+) {
   const role = getRole(req);
   const user = getUser(req);
-
   let vet = null;
+
+  // ตรวจสอบข้อมูลสัตวแพทย์
   if (role === 'vet') {
     vet = await getCurrentVet(req);
-    if (!vet) throw new Error('ไม่พบข้อมูลสัตวแพทย์');
+    if (!vet) {
+      throw new Error('ไม่พบข้อมูลสัตวแพทย์');
+    }
   }
 
-  let vetQuery = supabase
+  // ดึงข้อมูลสัตวแพทย์
+  const { data: vets, error: vetError } = await supabase
     .from('vets')
     .select('vet_id, user_id, first_name, last_name, status')
     .eq('status', 'active')
     .order('first_name');
 
-  const { data: vets, error: vetError } = await vetQuery;
   if (vetError) throw vetError;
 
+  // เรียงข้อมูล
+  const ascending = sortOrder === 'asc';
+
+  // ดึง Appointment
   let appointmentQuery = supabase
     .from('appointments')
     .select('*')
-    .order('appointment_date', { ascending: false })
-    .order('appointment_time', { ascending: false });
+    .order('appointment_date', { ascending })
+    .order('appointment_time', { ascending });
 
+  // กรองตามสัตวแพทย์
   if (role === 'vet') {
     appointmentQuery = appointmentQuery.eq('vet_id', vet.vet_id);
-  } else if (role === 'clinic' && vetFilter) {
+  } else if (['clinic', 'clinic_staff'].includes(role) && vetFilter) {
     appointmentQuery = appointmentQuery.eq('vet_id', vetFilter);
+  }
+
+  // กรองตามสถานะ Appointment
+  if (
+    statusFilter &&
+    ['completed', 'confirmed', 'cancelled'].includes(statusFilter)
+  ) {
+    appointmentQuery = appointmentQuery.eq('status', statusFilter);
   }
 
   const { data: appointments, error: appointmentError } =
     await appointmentQuery;
+
   if (appointmentError) throw appointmentError;
 
+  // ดึงข้อมูลสัตว์เลี้ยง
   const { data: pets, error: petError } = await supabase
     .from('pets')
     .select('*');
 
   if (petError) throw petError;
 
+  // ดึงข้อมูลเจ้าของ
   const { data: owners, error: ownerError } = await supabase
     .from('pet_owners')
     .select('*');
 
   if (ownerError) throw ownerError;
 
+  // ดึง Visit Records
   const { data: records, error: recordError } = await supabase
     .from('visit_records')
     .select('*');
 
   if (recordError) throw recordError;
 
-  const petMap = new Map((pets || []).map((p) => [String(p.pet_id), p]));
-  const ownerMap = new Map(
-    (owners || []).map((o) => [String(o.pet_owner_id), o]),
-  );
-  const vetMap = new Map((vets || []).map((v) => [String(v.vet_id), v]));
-  const recordMap = new Map(
-    (records || []).map((r) => [String(r.appointment_id), r]),
+  // สร้าง Map
+  const petMap = new Map(
+    (pets || []).map((p) => [String(p.pet_id), p])
   );
 
+  const ownerMap = new Map(
+    (owners || []).map((o) => [String(o.pet_owner_id), o])
+  );
+
+  const vetMap = new Map(
+    (vets || []).map((v) => [String(v.vet_id), v])
+  );
+
+  const recordMap = new Map(
+    (records || []).map((r) => [String(r.appointment_id), r])
+  );
+
+  // รวมข้อมูล Appointment
   const rows = (appointments || []).map((a) => {
     const pet = petMap.get(String(a.pet_id)) || {};
     const owner = ownerMap.get(String(pet.pet_owner_id)) || {};
@@ -90,9 +124,11 @@ async function getPageData(req, vetFilter = '') {
     return {
       ...a,
       pet,
-      pet_name: pet.pet_name  || '-',
+      pet_name: pet.pet_name || '-',
       owner_name:
-        [owner.first_name, owner.last_name].filter(Boolean).join(' ') || '-',
+        [owner.first_name, owner.last_name]
+          .filter(Boolean)
+          .join(' ') || '-',
       vet_name:
         [assignedVet.first_name, assignedVet.last_name]
           .filter(Boolean)
@@ -100,30 +136,45 @@ async function getPageData(req, vetFilter = '') {
       visit_record: recordMap.get(String(a.appointment_id)) || null,
     };
   });
-  console.log(
-    'Appointment pet_id:',
-    (appointments || []).map((a) => ({
-      appointment_id: a.appointment_id,
-      pet_id: a.pet_id,
-    })),
-  );
-console.log('Pets data:', JSON.stringify(pets, null, 2));
-  return { user, role, vet, vets: vets || [], appointments: rows };
+
+  return {
+    user,
+    role,
+    vet,
+    vets: vets || [],
+    appointments: rows,
+  };
 }
 
 exports.index = async (req, res) => {
   try {
-    const vetFilter = getRole(req) === 'clinic' ? req.query.vet_id || '' : '';
-    const data = await getPageData(req, vetFilter);
+    const role = getRole(req);
+
+    const vetFilter = ['clinic', 'clinic_staff'].includes(role)
+      ? req.query.vet_id || ''
+      : '';
+
+    const statusFilter = ['completed', 'confirmed', 'cancelled'].includes(
+      req.query.status,
+    )
+      ? req.query.status
+      : '';
+
+    const sortOrder = req.query.sort === 'asc' ? 'asc' : 'desc';
+
+    const data = await getPageData(req, vetFilter, statusFilter, sortOrder);
 
     res.render('treatments/index', {
       ...data,
       activePage: 'treatments',
       selectedVet: vetFilter,
+      selectedStatus: statusFilter,
+      selectedSort: sortOrder,
       error: null,
     });
   } catch (error) {
     console.error('Treatment index error:', error);
+
     res.status(500).render('treatments/index', {
       user: getUser(req),
       role: getRole(req),
@@ -132,11 +183,12 @@ exports.index = async (req, res) => {
       appointments: [],
       activePage: 'treatments',
       selectedVet: '',
+      selectedStatus: '',
+      selectedSort: 'desc',
       error: getMessage(error),
     });
   }
 };
-
 exports.detail = async (req, res) => {
   try {
     const appointmentId = req.params.id;
