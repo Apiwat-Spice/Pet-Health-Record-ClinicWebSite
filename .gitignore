@@ -1,20 +1,6 @@
 .env
 node_modules
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //Todo (ทำแล้ว)
 ทำเมลส่ง Member ตอนDel ตอนAdd
 email ซ้ำของ Member
@@ -30,14 +16,15 @@ Receipt ทำเอกสารไม่ได้ถ้ายังไม่ท
 Sort Appoinment
 Treatment PopUP ตอนจบการรักษา
 
+Receipt ทำ PDF ให้โหลด✅
+Receipt ยังไม่มีการตรวจสอบสินค้าหมดอายุ✅
+Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว✅
+Error Msg ตอน Receipt✅
 
+ClinicStaff /  Vet โชว์รูปโปรไฟล์ในตาราง✅
 
 //Todo (ยังไม่ได้ทำ)
-Receipt ทำ PDF ให้โหลด
-Receipt ยังไม่มีการตรวจสอบสินค้าหมดอายุ
-Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว
-Error Msg ตอน Receipt
-
 Vet Class 1/2 สามารถทำไรได้บ้าง
+OTP แก้ให้กด เบิ้ล ไม่ได้
 
 
