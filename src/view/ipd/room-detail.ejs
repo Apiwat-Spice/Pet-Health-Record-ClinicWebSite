@@ -98,8 +98,8 @@
       <i class="fa-solid fa-paw text-primary me-2"></i>สัตว์เลี้ยงในห้อง
     </h5>
     <span class="badge text-bg-primary">
-      <%= admittedPets.length %> ตัว
-    </span>
+  <%= admittedPets.length %> รายการ
+</span>
   </div>
   <div class="card-body p-0">
     <% if (admittedPets.length === 0) { %>
@@ -145,8 +145,12 @@
                 </td>
                 <td><%= plan.check_out_time ? plan.check_out_time.slice(0, 5) : '-' %></td>
                 <td>
-                  <span class="badge text-bg-success">กำลังพักรักษา</span>
-                </td>
+  <% if (plan.status === 'planned') { %>
+    <span class="badge text-bg-warning">Planned</span>
+  <% } else if (plan.status === 'admitted') { %>
+    <span class="badge text-bg-success">กำลังพักรักษา</span>
+  <% } %>
+</td>
               </tr>
             <% }) %>
           </tbody>

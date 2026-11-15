@@ -1,30 +1,3 @@
 .env
 node_modules
 
-//Todo (ทำแล้ว)
-ทำเมลส่ง Member ตอนDel ตอนAdd
-email ซ้ำของ Member
-PetOwner เพิ่่มฟอร์มกรอกเบอร์
-แก้ Layout formเพิ่ม Clinic ClinicStaff
-ทำหน้ากดดูรายละเอียด IPD.Admitplan
-แก้ตอน Add วัน IPD.Admitplan ให้ล็อคเวลา ทุก30 นาที
-ทำหน้ากดดูรายละเอียด Stock Appointment 
-Appointment กด Pending เลือกเวลาใหม่
-Walk In ล็อควันเวลาให้เลย
-Receipt ทำเอกสารไม่ได้ถ้ายังไม่ทำ Treatment
-เพิ่มกรอง Treatment ให้ Vets Clinic ClinicStaff
-Sort Appoinment
-Treatment PopUP ตอนจบการรักษา
-
-Receipt ทำ PDF ให้โหลด✅
-Receipt ยังไม่มีการตรวจสอบสินค้าหมดอายุ✅
-Receipt แก้ไขให้กรอกไม่ได้ถ้า ทำเอกสารแล้ว✅
-Error Msg ตอน Receipt✅
-
-ClinicStaff /  Vet โชว์รูปโปรไฟล์ในตาราง✅
-
-//Todo (ยังไม่ได้ทำ)
-Vet Class 1/2 สามารถทำไรได้บ้าง
-OTP แก้ให้กด เบิ้ล ไม่ได้
-
-

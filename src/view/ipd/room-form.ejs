@@ -19,8 +19,13 @@
       <%- include('../partial/menu') %>
       <main class="col-md-9 col-lg-10 p-4">
         <div class="mb-4">
-          <h2 class="fw-bold"><i class="fa-solid fa-hospital text-primary me-2"></i>เพิ่มห้อง IPD</h2>
-          <p class="text-muted mb-0">กรอกข้อมูลห้องพักสัตว์ป่วยใน</p>
+         <h2 class="fw-bold">
+  <i class="fa-solid fa-hospital text-primary me-2"></i>
+  <%= editing ? 'แก้ไขห้อง IPD' : 'เพิ่มห้อง IPD' %>
+</h2>
+<p class="text-muted mb-0">
+  <%= editing ? 'แก้ไขข้อมูลห้องพักสัตว์ป่วยใน' : 'กรอกข้อมูลห้องพักสัตว์ป่วยใน' %>
+</p>
         </div>
         <% if (locals.error) { %>
           <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -30,7 +35,7 @@
         <% } %>
         <div class="card border-0 shadow-sm">
           <div class="card-body p-4">
-            <form method="POST" action="/ipd/rooms/create">
+            <form method="POST" action="<%= editing ? `/ipd/rooms/${room.room_id}/edit` : '/ipd/rooms/create' %>">
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="roomCode" class="form-label">รหัสห้อง <span class="text-danger">*</span></label>
@@ -49,8 +54,10 @@
                 </div>
                 <div class="col-md-6">
                   <label for="petAmount" class="form-label">จำนวนสัตว์ที่รองรับ <span class="text-danger">*</span></label>
-                  <input id="petAmount" name="pet_amount" type="number" class="form-control" min="1" step="1" value="<%= room.pet_amount || 1 %>" required>
-                  <div class="form-text">ต้องเป็นจำนวนเต็มมากกว่า 0</div>
+                  <input id="petAmount" name="pet_amount" type="number"
+  class="form-control" min="1" max="50" step="1"
+  value="<%= room.pet_amount || 1 %>" required>
+                 <div class="form-text">รองรับสัตว์เลี้ยงได้ 1–50 ตัว</div>
                 </div>
                 <!-- <div class="col-md-6">
                   <label for="status" class="form-label">สถานะห้อง <span class="text-danger">*</span></label>
@@ -64,12 +71,13 @@
                   <textarea id="detail" name="detail" class="form-control" rows="4" placeholder="ข้อมูลเพิ่มเติมเกี่ยวกับห้อง"><%= room.detail || '' %></textarea>
                 </div>
               </div>
-              <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="/ipd/rooms" class="btn btn-light">ยกเลิก</a>
-                <button type="submit" class="btn btn-success">
-                  <i class="fa-solid fa-check me-1"></i>บันทึกข้อมูล
-                </button>
-              </div>
+<div class="d-flex justify-content-end gap-2 mt-4">
+  <a href="/ipd/rooms" class="btn btn-light">ยกเลิก</a>
+  <button type="submit" class="btn btn-success">
+    <i class="fa-solid fa-check me-1"></i>
+    <%= editing ? 'บันทึกการแก้ไข' : 'บันทึกข้อมูล' %>
+  </button>
+</div>
             </form>
           </div>
         </div>

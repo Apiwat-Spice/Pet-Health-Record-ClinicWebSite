@@ -90,10 +90,18 @@
                         </td>
                         <td><%= room.detail || '-' %></td>
                         <td>
-                          <a href="/ipd/rooms/<%= room.room_id %>" class="btn btn-sm btn-outline-primary text-nowrap">
-                            <i class="fa-solid fa-eye me-1"></i> ดูรายละเอียด
-                          </a>
-                        </td>
+  <div class="d-flex gap-1">
+    <a href="/ipd/rooms/<%= room.room_id %>/edit"
+       class="btn btn-sm btn-outline-dark"
+       title="แก้ไขข้อมูลห้อง">
+      <i class="fa-solid fa-pen-to-square"></i>
+    </a>
+    <a href="/ipd/rooms/<%= room.room_id %>"
+       class="btn btn-sm btn-outline-primary text-nowrap">
+      <i class="fa-solid fa-eye me-1"></i> ดูรายละเอียด
+    </a>
+  </div>
+</td>
                       </tr>
                     <% }) %>
                   <% } %>

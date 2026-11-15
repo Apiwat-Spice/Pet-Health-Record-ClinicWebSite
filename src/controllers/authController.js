@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const supabase = require('../../config/supabase');
-// แสดงหน้า Login
+// แสดงหน้า Login Register
 exports.showLogin = (req, res) => {
   const errorMessage = {
     account_disabled: 'บัญชีถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
@@ -10,14 +10,13 @@ exports.showLogin = (req, res) => {
     error: errorMessage[req.query.error] || null,
   });
 };
-// แสดงหน้า Register
 exports.showRegister = (req, res) => {
   res.render('register', {
     error: null,
   });
 };
 
-// Login
+// Core login
 exports.login = async (req, res) => {
   const email = String(req.body.email || '')
     .trim()
@@ -100,8 +99,6 @@ exports.login = async (req, res) => {
     });
   }
 };
-
-// Register
 exports.register = async (req, res) => {
   const {
     username,

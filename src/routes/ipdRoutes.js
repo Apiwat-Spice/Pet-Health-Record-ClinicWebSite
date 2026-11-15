@@ -16,6 +16,8 @@ router.get('/rooms', requireClinic, ipdController.listRooms);
 router.get('/rooms/create', requireClinic, ipdController.showCreateRoom);
 router.post('/rooms/create', requireClinic, ipdController.createRoom);
 router.get('/rooms/:id', requireClinic, ipdController.roomDetail);
+router.get('/rooms/:id/edit', ipdController.showEditRoom);
+router.post('/rooms/:id/edit', ipdController.updateRoom);
 
 // Admit Plans
 router.get('/admit-plans', requireClinic, ipdController.listAdmitPlans);
@@ -25,4 +27,8 @@ router.get('/admit-plans/:id/edit', requireClinic, ipdController.editAdmitPlan);
 router.post('/admit-plans/:id/edit', requireClinic, ipdController.updateAdmitPlan);
 router.post('/admit-plans/:id/check-in', requireClinic, ipdController.checkIn);
 router.post('/admit-plans/:id/check-out', requireClinic, ipdController.checkOut);
+router.post(
+  '/admit-plans/:id/cancel',
+  ipdController.cancelAdmitPlan
+);
 module.exports = router;
