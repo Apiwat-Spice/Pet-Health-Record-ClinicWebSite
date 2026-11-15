@@ -184,7 +184,7 @@
 
                 <div class="alert alert-info py-2">
                   <i class="fa-solid fa-circle-info me-1"></i>
-                  ราคาต่อหน่วยเริ่มต้นจากราคาสินค้าในคลัง สามารถปรับราคาในใบเสร็จได้
+                  ราคาต่อหน่วยเริ่มต้นจากราคาสินค้าในคลัง ไม่สามารถปรับราคาในใบเสร็จได้
                 </div>
 
                 <div class="table-responsive">
@@ -453,14 +453,16 @@
 
       const priceCell = createCell();
 
-      const priceInput = document.createElement('input');
-      priceInput.type = 'number';
-      priceInput.min = '0';
-      priceInput.step = '0.01';
-      priceInput.required = true;
-      priceInput.value = item.unit_price ?? '';
-      priceInput.className = 'form-control item-price';
-      priceInput.disabled = !canEditReceipt;
+const priceInput = document.createElement('input');
+priceInput.type = 'number';
+priceInput.min = '0';
+priceInput.step = '0.25';
+priceInput.required = true;
+priceInput.value = item.unit_price ?? '';
+priceInput.className = 'form-control item-price';
+priceInput.readOnly = true;
+priceInput.style.backgroundColor = '#e9ecef';
+priceInput.style.cursor = 'not-allowed';
 
       priceCell.appendChild(priceInput);
       row.appendChild(priceCell);
@@ -523,14 +525,6 @@
         refreshStock(true);
         clearReceiptError();
       });
-
-      priceInput.addEventListener('input', () => {
-        if (!canEditReceipt) return;
-
-        updateTotals();
-        clearReceiptError();
-      });
-
       qtyInput.addEventListener('input', () => {
         if (!canEditReceipt) return;
 
