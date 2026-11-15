@@ -1,5 +1,25 @@
 const supabase = require('../../config/supabase');
 
+async function getClinicStaffId(user) {
+  if (user.role === 'clinic') return null;
+
+  if (user.role === 'clinic_staff') {
+    const { data, error } = await supabase
+      .from('clinic_staff')
+      .select('clinic_staff_id')
+      .eq('user_id', user.user_id)
+      .single();
+
+    if (error || !data) {
+      throw new Error('ไม่พบรหัส Clinic Staff ของผู้ใช้งาน');
+    }
+
+    return Number(data.clinic_staff_id);
+  }
+
+  throw new Error('ไม่พบข้อมูล Clinic Staff ของผู้ใช้งาน');
+}
+
 async function getOverview(req, res) {
   try {
     const { data: stocks, error } = await supabase
@@ -77,17 +97,7 @@ async function createStock(req, res) {
       return res.status(403).send('ผิดตำแหน่ง ไม่สามารถทำรายการได้');
     }
 
-    let clinicStaffId = null;
-
-    if (user.role === 'clinic_staff') {
-      clinicStaffId = user.clinic_staff_id;
-
-      if (!clinicStaffId) {
-        throw new Error(
-          'ไม่พบรหัส Clinic Staff ของผู้ใช้งาน ไม่สามารถทำรายการได้',
-        );
-      }
-    }
+    const clinicStaffId = await getClinicStaffId(user);
 
     const quantity = Number(formData.quantity);
     const price = Number(formData.price);
@@ -167,6 +177,7 @@ async function createStock(req, res) {
 
     req.session.stockSuccess =
       'เพิ่มสินค้าและบันทึก Transaction In เรียบร้อยแล้ว';
+
     return res.redirect('/stock/overview');
   } catch (error) {
     console.error('Create stock transaction error:', error);
@@ -221,9 +232,8 @@ async function getEdit(req, res) {
       stock,
       stocks: stocks || [],
       formData: stock,
-      error: null
+      error: null,
     });
-
   } catch (error) {
     console.error('Get edit stock error:', error);
     res.status(500).send('ไม่สามารถโหลดข้อมูลสินค้าได้');
@@ -309,7 +319,7 @@ async function updateStock(req, res) {
       .eq('stock_id', stockId);
 
     if (error) throw error;
-      
+
     req.session.stockSuccess = 'แก้ไขข้อมูลสินค้าเรียบร้อยแล้ว';
     return res.redirect('/stock/overview');
   } catch (error) {
@@ -321,22 +331,23 @@ async function updateStock(req, res) {
       .eq('stock_id', stockId)
       .single();
 
-return res.status(400).render('Stock/edit', {
-  user,
-  activePage: 'stock-overview',
-  stock: {
-    ...(stock || {}),
-    ...req.body
-  },
-  stocks: [],
-  formData: {
-    ...(stock || {}),
-    ...req.body
-  },
-  error: error.message || 'ไม่สามารถแก้ไขสินค้าได้'
-});
+    return res.status(400).render('Stock/edit', {
+      user,
+      activePage: 'stock-overview',
+      stock: {
+        ...(stock || {}),
+        ...req.body,
+      },
+      stocks: [],
+      formData: {
+        ...(stock || {}),
+        ...req.body,
+      },
+      error: error.message || 'ไม่สามารถแก้ไขสินค้าได้',
+    });
   }
 }
+
 module.exports = {
   getOverview,
   getCreate,

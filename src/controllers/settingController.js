@@ -223,7 +223,7 @@ exports.showOtp = (req, res) => {
   const role = getRole(user);
 
   if (!userId || !['clinic_staff', 'vet', 'clinic'].includes(role)) {
-    return res.status(403).send('ไม่มีสิทธิ์เปลี่ยนรหัสผ่าน');
+    return res.status(403).send('ไม่มีสิทธิ์เปลี่ยนรหัสผ่าน1');
   }
 
   const otpSession = req.session.passwordOtp;
@@ -253,8 +253,8 @@ exports.requestOtp = async (req, res) => {
     const userId = getUserId(user);
     const role = getRole(user);
 
-    if (!userId || !['clinic_staff', 'vet'].includes(role)) {
-      return res.status(403).send('ไม่มีสิทธิ์เปลี่ยนรหัสผ่าน');
+    if (!userId || !['clinic_staff', 'vet','clinic'].includes(role)) {
+      return res.status(403).send('ไม่มีสิทธิ์เปลี่ยนรหัสผ่าน2');
     }
 
     const { data: account, error: accountError } = await supabase
@@ -368,7 +368,7 @@ exports.verifyOtp = async (req, res) => {
 
     if (
       !userId ||
-      !['clinic_staff', 'vet'].includes(role) ||
+      !['clinic_staff', 'vet', 'clinic'].includes(role) ||
       !otpSession ||
       otpSession.userId !== userId ||
       otpSession.role !== role ||
@@ -500,7 +500,7 @@ exports.resetPassword = async (req, res) => {
 
     if (
       !userId ||
-      !['clinic_staff', 'vet'].includes(role) ||
+      !['clinic_staff', 'vet', 'clinic'].includes(role) ||
       !otpSession?.verified ||
       otpSession.userId !== userId ||
       otpSession.role !== role ||
