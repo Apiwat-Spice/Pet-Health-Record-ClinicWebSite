@@ -1,3 +1,4 @@
+
 const supabase = require('../../config/supabase');
 
 function sendError(req, res, status, message) {
@@ -12,12 +13,29 @@ function isValidDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return (
-    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
   );
 }
 
 function isValidTime(value) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value || '');
+}
+
+async function getClinicStaffId(user) {
+  if (user.role === 'clinic') return null;
+  if (user.role !== 'clinic_staff') throw new Error('FORBIDDEN');
+
+  const { data, error } = await supabase
+    .from('clinic_staff')
+    .select('clinic_staff_id')
+    .eq('user_id', user.user_id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('CLINIC_STAFF_NOT_FOUND');
+
+  return data.clinic_staff_id;
 }
 
 exports.showVisitRecords = async (req, res) => {
@@ -26,8 +44,7 @@ exports.showVisitRecords = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select(
-        `
+      .select(`
         appointment_id,
         appointment_date,
         appointment_time,
@@ -52,8 +69,7 @@ exports.showVisitRecords = async (req, res) => {
           note,
           status
         )
-      `,
-      )
+      `)
       .in('status', ['confirmed', 'completed'])
       .order('appointment_date', { ascending: true })
       .order('appointment_time', { ascending: true });
@@ -78,7 +94,7 @@ exports.showVisitRecords = async (req, res) => {
           vet_name:
             [a.vets?.first_name, a.vets?.last_name].filter(Boolean).join(' ') ||
             '-',
-          visit_record: visit,
+          visit_record: visit
         };
       })
       .filter((a) => a.status === 'confirmed' || !!a.visit_record);
@@ -88,7 +104,7 @@ exports.showVisitRecords = async (req, res) => {
       activePage: 'visit-records',
       appointments,
       error: req.query.error || null,
-      success: req.query.success || null,
+      success: req.query.success || null
     });
   } catch (error) {
     console.error('Load visit records error:', error);
@@ -97,7 +113,9 @@ exports.showVisitRecords = async (req, res) => {
 };
 
 exports.showVisitRecordForm = async (req, res) => {
-  if (!req.session?.user) return res.redirect('/login');
+  const user = req.session?.user;
+
+  if (!user) return res.redirect('/login');
 
   try {
     const appointmentId = Number(req.params.appointmentId);
@@ -108,8 +126,7 @@ exports.showVisitRecordForm = async (req, res) => {
 
     const { data: appointment, error } = await supabase
       .from('appointments')
-      .select(
-        `
+      .select(`
         appointment_id,
         appointment_date,
         appointment_time,
@@ -120,8 +137,7 @@ exports.showVisitRecordForm = async (req, res) => {
         pets (pet_name),
         vets (first_name, last_name),
         visit_records (*)
-      `,
-      )
+      `)
       .eq('appointment_id', appointmentId)
       .maybeSingle();
 
@@ -140,12 +156,12 @@ exports.showVisitRecordForm = async (req, res) => {
     }
 
     return res.render('Appointments/VisitRecordForm', {
-      user: req.session.user,
+      user,
       activePage: 'visit-records',
       appointment,
       visitRecord,
       error: req.query.error || null,
-      success: req.query.success || null,
+      success: req.query.success || null
     });
   } catch (error) {
     console.error('Load visit record form error:', error);
@@ -153,9 +169,10 @@ exports.showVisitRecordForm = async (req, res) => {
   }
 };
 
-
 exports.saveVisitRecord = async (req, res) => {
-  if (!req.session?.user) {
+  const user = req.session?.user;
+
+  if (!user) {
     return sendError(req, res, 401, 'กรุณาเข้าสู่ระบบใหม่');
   }
 
@@ -164,7 +181,8 @@ exports.saveVisitRecord = async (req, res) => {
     const body = req.body || {};
 
     console.log('[VisitRecord] Start saving:', appointmentId);
-    console.log('[VisitRecord] Role:', req.session.user.role);
+    console.log('[VisitRecord] User:', user);
+    console.log('[VisitRecord] Role:', user.role);
     console.log('[VisitRecord] Request body:', body);
 
     if (!Number.isSafeInteger(appointmentId) || appointmentId <= 0) {
@@ -179,12 +197,13 @@ exports.saveVisitRecord = async (req, res) => {
     const treatment = String(body.treatment || '').trim();
     const note = String(body.note || '').trim();
 
-    if (
-      !visit_date ||
-      !visit_time ||
-      !weight 
-    ) {
-      return sendError(req, res, 400, 'กรุณากรอกข้อมูล น้ำหนัก วันที่ และเวลาเข้าตรวจให้ครบถ้วน');
+    if (!visit_date || !visit_time || !weight) {
+      return sendError(
+        req,
+        res,
+        400,
+        'กรุณากรอกข้อมูล น้ำหนัก วันที่ และเวลาเข้าตรวจให้ครบถ้วน'
+      );
     }
 
     if (!isValidDate(visit_date) || !isValidTime(visit_time)) {
@@ -245,9 +264,11 @@ exports.saveVisitRecord = async (req, res) => {
       );
     }
 
+    const clinicStaffId = await getClinicStaffId(user);
+
     const payload = {
       appointment_id: appointmentId,
-      clinic_staff_id: null,
+      clinic_staff_id: clinicStaffId,
       visit_date,
       visit_time,
       weight: parsedWeight,
@@ -255,7 +276,7 @@ exports.saveVisitRecord = async (req, res) => {
       diagnosis,
       treatment,
       note,
-      status: 'Ready' 
+      status: 'Ready'
     };
 
     console.log('[VisitRecord] Saving to Supabase');
